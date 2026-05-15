@@ -1,7 +1,5 @@
-function createFrames(imageName, frameCount) {
+function createFrames(imageName, frameCount, frameWidth, frameHeight) {
     const baseTexture = PIXI.BaseTexture.from(imageName);
-    const frameWidth = 73;
-    const frameHeight = 73;
     const frames = [];
     const padding = 4;
     
@@ -15,12 +13,23 @@ function createFrames(imageName, frameCount) {
 let zeroAnimations = {};
 
 async function setup() {
-    await PIXI.Assets.load(['sprites/zero_Move.png', 'sprites/zero_Attack.png', 'sprites/zero_Idle.png']);
+    await PIXI.Assets.load(['sprites/zero_Move.png', 'sprites/zero_Attack.png',
+        'sprites/zero_Idle.png', 'sprites/human_Move.png', 'sprites/player_Move.png',
+        'sprites/player_Idle.png']);
 
     zeroAnimations = {
-        move: createFrames('sprites/zero_Move.png', 6),
-        attack: createFrames('sprites/zero_Attack.png', 6),
-        idle: createFrames('sprites/zero_Idle.png', 6)
+        move: createFrames('sprites/zero_Move.png', 6, 73, 73),
+        attack: createFrames('sprites/zero_Attack.png', 6, 73, 73),
+        idle: createFrames('sprites/zero_Idle.png', 6, 73, 73)
+    };
+
+    playerAnimations = {
+        move: createFrames('sprites/player_Move.png', 6, 73, 73),
+        idle: createFrames('sprites/player_Idle.png', 4, 73, 73)
+    };
+    
+    humanAnimations = {
+        move: createFrames('sprites/human_Move.png', 6, 73, 73),
     };
 }
 

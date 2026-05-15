@@ -22,6 +22,11 @@ class GameObject {
         });
         document.body.appendChild(this.app.view);
 
+        await PIXI.Assets.load({
+            alias: 'testBackground',
+            src: 'testBackground.png' 
+        });
+
        
         this.worldContainer = new PIXI.Container();
         this.app.stage.addChild(this.worldContainer);

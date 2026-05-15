@@ -20,16 +20,13 @@ class Humano {
         this._buildExclamation();
     }
 
-    // Gráficos placeholder
     _buildVisual() {
-        this.graphic = new PIXI.Graphics();
-        this.graphic.beginFill(0xe0c97f);       
-        this.graphic.drawRoundedRect(-10, -13, 20, 24, 4);
-        this.graphic.endFill();
-        this.graphic.beginFill(0xffe0b2);      
-        this.graphic.drawCircle(0, -18, 7);
-        this.graphic.endFill();
-        this.container.addChild(this.graphic);
+         this.sprite = new PIXI.AnimatedSprite(humanAnimations.move);
+            this.sprite.anchor.set(0.5);
+            this.sprite.animationSpeed = 0.15;
+            this.sprite.play();
+            this.container.addChild(this.sprite);
+            this.graphic = this.sprite;
     }
 
     _buildExclamation() {
@@ -49,21 +46,18 @@ class Humano {
     }
 
     _setBodyColor(hexColor) {
-        this.graphic.clear();
-        this.graphic.beginFill(hexColor);
-        this.graphic.drawRoundedRect(-10, -13, 20, 24, 4);
-        this.graphic.endFill();
-        this.graphic.beginFill(0xffe0b2);
-        this.graphic.drawCircle(0, -18, 7);
-        this.graphic.endFill();
-    }
+    
+        if (this.sprite) {
+          this.sprite.tint = hexColor;
+      }
+}
 
     // Cambios gráficos dependiendo del estado
     _enterState(newState) {
         this.state = newState;
         if (newState === 'wander') {
             this.exclamation.visible = false;
-            this._setBodyColor(0xe0c97f);     
+            this._setBodyColor(0xffffff);     
         } else if (newState === 'flee') {
             this._fleeTimer = Config.humanFleeFrames;
             this.exclamation.visible = true;
@@ -76,22 +70,41 @@ class Humano {
         this._infected = true;
         this._enterState('wander'); 
 
+        const aura = new PIXI.Graphics();
+        aura.beginFill(0x69f0ae, 0.5);
+        aura.drawCircle(0, 0, 20);    
+        aura.endFill();
+        aura.filters = [new PIXI.BlurFilter(8)];
+
         this.update = () => {
             this.container.x = this.x;
             this.container.y = this.y;
         };
 
+       
         let blinks = 0;
         const blinkInterval = setInterval(() => {
             this._setBodyColor(blinks % 2 === 0 ? 0x69f0ae : 0xe0c97f);
             blinks++;
             if (blinks >= 8) {
                 clearInterval(blinkInterval);
+                this.sprite.tint = 0xffffff;
                 this.container.visible = false;
                 zombies.push(new Zombie(this.x, this.y, worldContainer));
             }
         }, 200);
     }
+    
+      flipSprite() {
+        if (!this.sprite) return;
+
+        if (this.headingX > 0) {
+            this.sprite.scale.x = 1;
+        } else if (this.headingX < 0) {
+            this.sprite.scale.x = -1;
+        }
+    }
+
 
     update(allHumans, player, allZombies, deltaTime) {
     
@@ -178,7 +191,8 @@ class Humano {
 
         this.x += direction.x * speed * deltaTime;
         this.y += direction.y * speed * deltaTime;
-
+       
+        this.flipSprite();
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;

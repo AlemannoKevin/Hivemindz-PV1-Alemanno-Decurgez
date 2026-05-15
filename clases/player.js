@@ -20,15 +20,12 @@ class Player {
 
         if (!this.isZombie) {
             
-            graphic.beginFill(0x4fc3f7);
-            graphic.drawRoundedRect(-12, -15, 24, 28, 5);
-            graphic.endFill();
-            graphic.beginFill(0xffe0b2);
-            graphic.drawCircle(0, -21, 9);
-            graphic.endFill();
-            graphic.lineStyle(1.5, 0xffffff, 0.5);
-            graphic.drawRoundedRect(-12, -15, 24, 28, 5);
-            graphic.lineStyle(0);
+            this.sprite = new PIXI.AnimatedSprite(playerAnimations.idle);
+            this.sprite.anchor.set(0.5);
+            this.sprite.animationSpeed = 0.15;
+            this.sprite.play();
+            this.container.addChild(this.sprite);
+            
         } else {
             this.sprite = new PIXI.AnimatedSprite(zeroAnimations.idle);
             this.sprite.anchor.set(0.5);
@@ -41,10 +38,12 @@ class Player {
     }
 
     _setAnimation(animName, loop = true) {
-        if (!this.isZombie || !this.sprite) return;
-        if (this.sprite.textures === zeroAnimations[animName]) return;
+        if (!this.sprite) return;
 
-        this.sprite.textures = zeroAnimations[animName];
+        const currentSet = this.isZombie ? zeroAnimations : playerAnimations;
+        if (this.sprite.textures === currentSet[animName]) return;
+
+        this.sprite.textures = currentSet[animName];
         this.sprite.loop = loop;
         this.sprite.gotoAndPlay(0);
         
@@ -115,11 +114,11 @@ class Player {
         if (moveX > 0) this.facingRight = true;
         else if (moveX < 0) this.facingRight = false;
 
-        if (this.isZombie && this.sprite) {
+        if (this.sprite) {
             this.sprite.scale.x = this.facingRight ? 1 : -1;
         }
 
-        if (!this.isAttacking && this.isZombie) {
+        if (!this.isAttacking) {
             if (moveX !== 0 || moveY !== 0) {
                 this._setAnimation('move');
             } else {

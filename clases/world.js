@@ -1,23 +1,21 @@
 const World = {
-    // Fondo placeholder
+    
     buildBackground(worldContainer) {
-        const bg = new PIXI.Graphics();
 
-        // Dark background fill
-        bg.beginFill(0x0d0d1a);
-        bg.drawRect(0, 0, Config.worldWidth, Config.worldHeight);
-        bg.endFill();
+        const texture = PIXI.Assets.get('testBackground');
 
-        bg.lineStyle(1, 0x161628);
-        for (let x = 0; x <= Config.worldWidth;  x += 80) {
-            bg.moveTo(x, 0); bg.lineTo(x, Config.worldHeight);
-        }
-        for (let y = 0; y <= Config.worldHeight; y += 80) {
-            bg.moveTo(0, y); bg.lineTo(Config.worldWidth, y);
-        }
+        //const bg = new PIXI.Sprite(texture);
 
-        bg.lineStyle(2, 0x222244);
-        bg.drawRect(0, 0, Config.worldWidth, Config.worldHeight);
+        const bg = new PIXI.TilingSprite(
+            texture,
+            Config.worldWidth,
+            Config.worldHeight
+        );
+
+        bg.tileScale.set(1);
+        
+        //bg.width = Config.worldWidth;
+        //bg.height = Config.worldHeight;
 
         worldContainer.addChild(bg);
     },
