@@ -12,7 +12,7 @@ const World = {
             Config.worldHeight
         );
 
-        bg.tileScale.set(1);
+        bg.tileScale.set(1.5);
         
         //bg.width = Config.worldWidth;
         //bg.height = Config.worldHeight;
