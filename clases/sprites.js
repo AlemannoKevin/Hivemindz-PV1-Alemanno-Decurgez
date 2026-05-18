@@ -10,12 +10,16 @@ function createFrames(imageName, frameCount, frameWidth, frameHeight) {
     return frames;
 }
 
+let playerAnimations = {};
 let zeroAnimations = {};
+let humanAnimations = {};
+let zombieAnimations = {};
 
 async function setup() {
     await PIXI.Assets.load(['sprites/zero_Move.png', 'sprites/zero_Attack.png',
         'sprites/zero_Idle.png', 'sprites/human_Move.png', 'sprites/player_Move.png',
-        'sprites/player_Idle.png']);
+        'sprites/player_Idle.png', 
+        'sprites/zombie_Move.png', 'sprites/zombie_Attack.png']);
 
     zeroAnimations = {
         move: createFrames('sprites/zero_Move.png', 6, 73, 73),
@@ -30,6 +34,11 @@ async function setup() {
     
     humanAnimations = {
         move: createFrames('sprites/human_Move.png', 6, 73, 73),
+    };
+    
+    zombieAnimations = {
+        move: createFrames('sprites/zombie_Move.png', 6, 73, 73),
+        attack: createFrames('sprites/zombie_Attack.png', 6, 73, 73)
     };
 }
 

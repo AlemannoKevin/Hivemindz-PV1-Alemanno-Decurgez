@@ -1,8 +1,9 @@
 class Zombie {
-    constructor(startX, startY, worldContainer) {
+    constructor(startX, startY, worldContainer, zombiesArray) {
         this.x = startX;
         this.y = startY;
         this.worldContainer = worldContainer;
+        this._zombiesArray = zombiesArray;
 
         this.headingX = 1;
         this.headingY = 0;
@@ -10,6 +11,8 @@ class Zombie {
         this._wanderTimer = Utils.randomBetween(60, 140);
         this._wanderDirX  = Math.cos(Utils.randomAngle());
         this._wanderDirY  = Math.sin(Utils.randomAngle());
+        this._isAttacking  = false;
+        this._attackCooldown = 0;   
 
         this.container = new PIXI.Container();
         worldContainer.addChild(this.container);
@@ -18,22 +21,34 @@ class Zombie {
 
 
     _buildVisual() {
-        this.container.removeChildren();
-        const g = new PIXI.Graphics();
-        g.beginFill(0x558b2f);
-        g.drawRoundedRect(-10, -13, 20, 24, 4);
-        g.endFill();
-        g.beginFill(0x8bc34a);
-        g.drawCircle(0, -19, 8);
-        g.endFill();
-        g.beginFill(0xff1744);
-        g.drawCircle(-3, -21, 2);
-        g.drawCircle( 3, -21, 2);
-        g.endFill();
-        this.container.addChild(g);
+        this.sprite = new PIXI.AnimatedSprite(zombieAnimations.move);
+        this.sprite.anchor.set(0.5);
+        this.sprite.animationSpeed = 0.15;
+        this.sprite.play();
+        this.container.addChild(this.sprite);
+        this.graphic = this.sprite;
     }
+    
+    flipSprite() {
+        if (!this.sprite) return;
 
-    update(allZombies, allHumans, deltaTime) {
+        if (this.headingX > 0) {
+            this.sprite.scale.x = 1;
+        } else if (this.headingX < 0) {
+            this.sprite.scale.x = -1;
+        }
+    }
+    
+    _setAnimation(animName, loop = true) {
+      const frames = zombieAnimations[animName];
+      if (!frames || this.sprite.textures === frames) return;
+
+      this.sprite.textures = frames;
+      this.sprite.loop     = loop;
+      this.sprite.gotoAndPlay(0);
+}
+
+    update(allZombies, allHumans, deltaTime, worldContainer) {
     
         for (const other of allZombies) {
             if (other === this) continue;
@@ -87,7 +102,51 @@ class Zombie {
         this.x += direction.x * Config.zombieSpeed * deltaTime;
         this.y += direction.y * Config.zombieSpeed * deltaTime;
         World.clampToBounds(this);
-        this.container.x = this.x;
-        this.container.y = this.y;
+
+        if (this._attackCooldown > 0) this._attackCooldown -= deltaTime;
+
+            let humanInRange = null;
+            for (const human of allHumans) {
+                if (human._infected || human._turning) continue;
+                const d = Utils.distance(this.x, this.y, human.x, human.y);
+                if (d < Config.zombieAttackRange) {
+                    humanInRange = human;
+                    break;
+                }
+            }
+
+            if (humanInRange && !this._isAttacking && this._attackCooldown <= 0) {
+                this._isAttacking = true;
+                this._attackCooldown = Config.zombieAttackCooldown; // El cooldown empieza YA
+                this._setAnimation('attack', false);
+
+                const targetHuman = humanInRange;
+
+                this.sprite.onComplete = () => {
+                    this._isAttacking = false;
+                    this._setAnimation('move', true);
+                    this.sprite.onComplete = null;
+
+                    // La infección ocurre idealmente al terminar el zarpazo (o usá el setTimeout acá adentro si querés delay)
+                    if (targetHuman && !targetHuman._infected && !targetHuman._turning) {
+                        // Verificamos si sigue relativamente cerca antes de infectar
+                        const finalDist = Utils.distance(this.x, this.y, targetHuman.x, targetHuman.y);
+                        if (finalDist < Config.zombieAttackRange + 20) { 
+                            targetHuman.startInfection(worldContainer, allZombies);
+                        }
+                    }
+                };
+            }
+            
+            if (!this._isAttacking) {
+                this._setAnimation('move', true);
+            }
+
+            // Voltear el sprite según la dirección
+            this.flipSprite();
+
+            // Actualizar posición del contenedor en Pixi
+            this.container.x = this.x;
+            this.container.y = this.y;
     }
 }

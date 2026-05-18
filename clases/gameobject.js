@@ -88,7 +88,7 @@ class GameObject {
         }
 
         for (const zombie of this.zombies) {
-            zombie.update(this.zombies, this.humans, delta);
+            zombie.update(this.zombies, this.humans, delta, this.worldContainer);
         }
 
         this.camera.followTarget(this.player.x, this.player.y);

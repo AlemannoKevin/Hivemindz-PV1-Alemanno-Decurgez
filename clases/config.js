@@ -11,7 +11,7 @@ const Config = {
     humanCount:       250,
     humanWalkSpeed:   0.9,
     humanFleeSpeed:   2.0,    // Velocidad de escape
-    humanFleeRange:   160,    // Distancia de detección de zombies en px
+    humanFleeRange:   180,    // Distancia de detección de zombies en px
     humanFleeFrames:  240,    // Duración del escape (4s a 60fps)
 
     // Boids
@@ -20,11 +20,13 @@ const Config = {
     boidsCohRadius:   120,    // Cohesión
 
     // Player
-    playerSpeed:     3.0,
-    aoeRadius:       160,    // Radio del ataque inicial/transformación
+    playerSpeed:     2.5,
+    aoeRadius:       125,    // Radio del ataque inicial/transformación
     aoeFadeFrames:   30,     
 
     // Zombies
-    zombieSpeed:     1.2,
-    zombieSeekRange: 300,    // Radio de detección de humanos en px
+    zombieSpeed:          1.3,
+    zombieSeekRange:      300,   // Radio de detección de humanos en px
+    zombieAttackRange:    30,
+    zombieAttackCooldown: 300,     
 };
