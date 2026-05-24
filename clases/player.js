@@ -6,12 +6,13 @@ class Player {
         this.isZombie = false;
         this.facingRight = true;
         this.isAttacking = false;
-
+        this.health = Config.playerMaxHealth;
        
         this.container = new PIXI.Container();
         worldContainer.addChild(this.container);
 
         this._buildVisual();
+        this._bulletCooldown = 0;
     }
 
     _buildVisual() {
@@ -134,7 +135,25 @@ class Player {
         World.clampToBounds(this);
     }
 
+    takeDamage() {
+        if (!this.isZombie) return;
+        this.health -= 1;
+
+        // Red flash
+        if (this.sprite) {
+            this.sprite.tint = 0xff4444;
+            setTimeout(() => {
+                if (this.sprite) this.sprite.tint = 0xffffff;
+            }, 150);
+        }
+
+        if (this.health <= 0) {
+            this.dead = true;
+        }
+    }
+
     update(deltaTime) {
+        if (this._bulletCooldown > 0) this._bulletCooldown -= deltaTime;
         this.handleMovement(deltaTime);
         this.container.x = this.x;
         this.container.y = this.y;

@@ -1,9 +1,9 @@
-class Zombie {
-    constructor(startX, startY, worldContainer, zombiesArray) {
+class Zombie extends GameObject{
+    constructor(startX, startY, worldContainer) {
+        super(startX, startY, worldContainer);
         this.x = startX;
         this.y = startY;
         this.worldContainer = worldContainer;
-        this._zombiesArray = zombiesArray;
 
         this.headingX = 1;
         this.headingY = 0;
@@ -14,8 +14,6 @@ class Zombie {
         this._isAttacking  = false;
         this._attackCooldown = 0;   
 
-        this.container = new PIXI.Container();
-        worldContainer.addChild(this.container);
         this._buildVisual();
     }
 
