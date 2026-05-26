@@ -36,6 +36,7 @@ const Mouse = {
     screenX: 0,
     screenY: 0,
     rightHeld: false,
+    leftHeld: false,
 
     init() {
         window.addEventListener('mousemove', e => {
@@ -47,6 +48,14 @@ const Mouse = {
         });
         window.addEventListener('mouseup', e => {
             if (e.button === 2) this.rightHeld = false;
+        });
+        window.addEventListener('mousedown', e => {
+            if (e.button === 2) this.rightHeld = true;
+            if (e.button === 0) this.leftHeld  = true;
+        });
+        window.addEventListener('mouseup', e => {
+            if (e.button === 2) this.rightHeld = false;
+            if (e.button === 0) this.leftHeld  = false;
         });
     },
 

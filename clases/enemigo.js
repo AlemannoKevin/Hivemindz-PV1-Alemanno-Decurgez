@@ -8,6 +8,10 @@ class Policia extends GameObject {
         this._wanderDirX   = Math.cos(Utils.randomAngle());
         this._wanderDirY   = Math.sin(Utils.randomAngle());
         this._shootTimer   = 0;
+        this._hits = Config.policiaHits;  // hits remaining before death
+        this._dead = false;
+
+        this._iFrames = 0;
 
         this._buildVisual();
 
@@ -23,23 +27,113 @@ class Policia extends GameObject {
 
     _buildVisual() {
         this.container.removeChildren();
-        const g = new PIXI.Graphics();
-        g.beginFill(0x1a237e);
-        g.drawRoundedRect(-11, -14, 22, 26, 4);
-        g.endFill();
-        g.beginFill(0xffe0b2);
-        g.drawCircle(0, -20, 8);
-        g.endFill();
-        g.beginFill(0x283593);
-        g.drawRect(-9, -28, 18, 5);
-        g.endFill();
-        this.container.addChild(g);
+
+        if (policeAnimations.move) {
+            this.sprite = new PIXI.AnimatedSprite(policeAnimations.move);
+            this.sprite.anchor.set(0.5);
+            this.sprite.animationSpeed = 0.12;
+            this.sprite.play();
+            this.container.addChild(this.sprite);
+        }
     }
 
-    update(allZombies, player, balas, worldContainer, deltaTime) {
-        this.currentState.update(this, { allZombies, player, balas, worldContainer, deltaTime });
+    takeDamage() {
+        if (this._iFrames > 0 || this._dead) return;
+        this._hits -= 1;
+        this._iFrames = 60; 
+
+        if (this.container.children[0]) {
+            this.container.children[0].tint = 0xff4444;
+            setTimeout(() => {
+                if (!this._dead && this.container.children[0])
+                    this.container.children[0].tint = 0xffffff;
+            }, 150);
+        }
+
+        if (this._hits <= 0) {
+            this._dead = true;
+            this.container.visible = false;
+        }
+    }
+
+    _setAnimation(animName, loop = true) {
+        const frames = policeAnimations[animName];
+        if (!frames || !this.sprite) return;
+        if (this.sprite.textures === frames) return;
+        this.sprite.textures = frames;
+        this.sprite.loop     = loop;
+        this.sprite.gotoAndPlay(0);
+    }
+
+    flipSprite(headingX) {
+        if (!this.sprite) return;
+        if (headingX > 0)      this.sprite.scale.x =  1;
+        else if (headingX < 0) this.sprite.scale.x = -1;
+    }
+
+    update(allZombies, allHumans, player, balas, worldContainer, deltaTime) {
+        this.currentState.update(this, { allZombies, allHumans, player, balas, worldContainer, deltaTime });
+        if (this._dead) return;
+        if (this._iFrames > 0) this._iFrames -= deltaTime;
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;
+    }
+}
+
+class Swat extends Policia {
+    constructor(startX, startY, worldContainer) {
+        super(startX, startY, worldContainer);
+        this._hits = Config.swatHits;
+
+        this._buildVisual();
+    }
+
+    _buildVisual() {
+        this.container.removeChildren();
+        if (agentAnimations.move) {
+            this.sprite = new PIXI.AnimatedSprite(agentAnimations.move);
+            this.sprite.anchor.set(0.5);
+            this.sprite.animationSpeed = 0.12;
+            this.sprite.play();
+            this.container.addChild(this.sprite);
+        }
+    }
+
+    _setAnimation(animName, loop = true) {
+        const frames = agentAnimations[animName];
+        if (!frames || !this.sprite) return;
+        if (this.sprite.textures === frames) return;
+        this.sprite.textures = frames;
+        this.sprite.loop     = loop;
+        this.sprite.gotoAndPlay(0);
+    }
+
+    update(allZombies, allHumans, player, balas, worldContainer, deltaTime) {
+        if (this._dead) return;
+        if (this._iFrames > 0) this._iFrames -= deltaTime;
+
+        this._lastContext = { allZombies, allHumans, player, balas, worldContainer, deltaTime };
+        this.currentState.update(this, { allZombies, allHumans, player, balas, worldContainer, deltaTime });
+
+        World.clampToBounds(this);
+        if (this._wanderDirX !== 0) this.flipSprite(this._wanderDirX);
+        this.container.x = this.x;
+        this.container.y = this.y;
+    }
+
+    _shoot(targetX, targetY, balas, worldContainer) {
+        const baseAngle = Utils.angleTo(this.x, this.y, targetX, targetY);
+        const angles    = [
+            baseAngle - Config.swatSpreadAngle,
+            baseAngle,
+            baseAngle + Config.swatSpreadAngle,
+        ];
+        for (const angle of angles) {
+            const bala       = new BalaPolicia(this.x, this.y, angle, worldContainer);
+            bala._damage     = Config.swatBulletDamage;
+            bala._knockback  = Config.swatKnockback;
+            balas.push(bala);
+        }
     }
 }

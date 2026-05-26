@@ -59,6 +59,8 @@ class Player {
     becomeZombie(worldContainer, humans, zombies) {
         if (this.isZombie) return;
         this.isZombie = true;
+        const hud = document.getElementById('hud');
+        if (hud) hud.style.display = 'block';
         this._buildVisual();
 
         const ring = new PIXI.Graphics();
@@ -139,7 +141,6 @@ class Player {
         if (!this.isZombie) return;
         this.health -= 1;
 
-        // Red flash
         if (this.sprite) {
             this.sprite.tint = 0xff4444;
             setTimeout(() => {
@@ -149,6 +150,13 @@ class Player {
 
         if (this.health <= 0) {
             this.dead = true;
+        }
+
+        const pct = Math.max(0, this.health / Config.playerMaxHealth) * 100;
+        const bar = document.getElementById('health-bar');
+        if (bar) {
+            bar.style.width = pct + '%';
+            bar.style.background = pct > 50 ? '#4caf50' : pct > 25 ? '#ffb74d' : '#ef5350';
         }
     }
 

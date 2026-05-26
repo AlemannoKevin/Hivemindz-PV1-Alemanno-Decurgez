@@ -12,7 +12,10 @@ class Zombie extends GameObject{
         this._wanderDirX  = Math.cos(Utils.randomAngle());
         this._wanderDirY  = Math.sin(Utils.randomAngle());
         this._isAttacking  = false;
-        this._attackCooldown = 0;   
+        this._attackCooldown = 0;
+        this._slowTimer = 0;
+        this._pushVx = 0; 
+        this._pushVy = 0;   
 
         this._buildVisual();
     }
@@ -44,10 +47,11 @@ class Zombie extends GameObject{
       this.sprite.textures = frames;
       this.sprite.loop     = loop;
       this.sprite.gotoAndPlay(0);
-}
+    }
 
-    update(allZombies, allHumans, deltaTime, worldContainer) {
+    update(allZombies, allHumans, allPolicia, deltaTime, worldContainer, lmbControlled = false, lmbX = 0, lmbY = 0) {
     
+        if (this._slowTimer > 0) this._slowTimer -= deltaTime;
         for (const other of allZombies) {
             if (other === this) continue;
             const dx = this.x - other.x;
@@ -60,77 +64,105 @@ class Zombie extends GameObject{
             }
         }
 
-        let nearestHuman = null;
-        let nearestDist  = Config.zombieSeekRange;
+        let nearestTarget = null;
+        let nearestDist   = Config.zombieSeekRange;
+
         for (const human of allHumans) {
             if (human._infected || human._turning) continue;
             const d = Utils.distance(this.x, this.y, human.x, human.y);
-            if (d < nearestDist) { nearestDist = d; nearestHuman = human; }
+            if (d < nearestDist) { nearestDist = d; nearestTarget = human; }
+        }
+
+        for (const cop of (allPolicia || [])) {
+            if (cop._dead) continue;
+            const d = Utils.distance(this.x, this.y, cop.x, cop.y);
+            if (d < nearestDist) { nearestDist = d; nearestTarget = cop; }
         }
 
         let goalX, goalY;
-        if (nearestHuman) {
-            
-            const angle = Utils.angleTo(this.x, this.y, nearestHuman.x, nearestHuman.y);
-            goalX = Math.cos(angle);
-            goalY = Math.sin(angle);
+        let speedBoost = 1;
+
+        if (lmbControlled) {
+           
+            const dir = Utils.normalize(lmbX - this.x, lmbY - this.y);
+            goalX     = dir.x;
+            goalY     = dir.y;
+            speedBoost = Config.lmbSpeedBoost;
         } else {
            
-            this._wanderTimer -= deltaTime;
-            if (this._wanderTimer <= 0) {
-                const angle = Utils.randomAngle();
-                this._wanderDirX = Math.cos(angle);
-                this._wanderDirY = Math.sin(angle);
-                this._wanderTimer = Utils.randomBetween(80, 160);
+            if (nearestTarget) {
+                const angle = Utils.angleTo(this.x, this.y, nearestTarget.x, nearestTarget.y);
+                goalX = Math.cos(angle);
+                goalY = Math.sin(angle);
+            } else {
+                this._wanderTimer -= deltaTime;
+                if (this._wanderTimer <= 0) {
+                    const angle      = Utils.randomAngle();
+                    this._wanderDirX = Math.cos(angle);
+                    this._wanderDirY = Math.sin(angle);
+                    this._wanderTimer = Utils.randomBetween(80, 160);
+                }
+                goalX = this._wanderDirX;
+                goalY = this._wanderDirY;
             }
-            goalX = this._wanderDirX;
-            goalY = this._wanderDirY;
         }
 
         const boidsForce = Boids.computeSteering(this, allZombies, {
-            separationWeight: 0,    
+            separationWeight: 0,
             alignmentWeight:  0.5,
-            cohesionWeight:   0.7,  
+            cohesionWeight:   0.7,
         });
 
         const direction = Boids.blendWithGoal(goalX, goalY, boidsForce.x, boidsForce.y, 0.65);
         this.headingX = direction.x;
         this.headingY = direction.y;
 
-        this.x += direction.x * Config.zombieSpeed * deltaTime;
-        this.y += direction.y * Config.zombieSpeed * deltaTime;
+        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost;
+        this.x += direction.x * Config.zombieSpeed * speedMultiplier * deltaTime;
+        this.y += direction.y * Config.zombieSpeed * speedMultiplier * deltaTime;
+
+        this.x += this._pushVx * deltaTime;
+        this.y += this._pushVy * deltaTime;
+        this._pushVx *= 0.85;   
+        this._pushVy *= 0.85;
         World.clampToBounds(this);
 
         if (this._attackCooldown > 0) this._attackCooldown -= deltaTime;
 
-            let humanInRange = null;
+            let targetInRange = null;
             for (const human of allHumans) {
                 if (human._infected || human._turning) continue;
                 const d = Utils.distance(this.x, this.y, human.x, human.y);
-                if (d < Config.zombieAttackRange) {
-                    humanInRange = human;
-                    break;
+                if (d < Config.zombieAttackRange) { targetInRange = human; break; }
+            }
+          
+            if (!targetInRange) {
+                for (const cop of (allPolicia || [])) {
+                    if (cop._dead) continue;
+                    const d = Utils.distance(this.x, this.y, cop.x, cop.y);
+                    if (d < Config.zombieAttackRange) { targetInRange = cop; break; }
                 }
             }
 
-            if (humanInRange && !this._isAttacking && this._attackCooldown <= 0) {
+            if (targetInRange && !this._isAttacking && this._attackCooldown <= 0) {
                 this._isAttacking = true;
-                this._attackCooldown = Config.zombieAttackCooldown; // El cooldown empieza YA
+                this._attackCooldown = Config.zombieAttackCooldown;
                 this._setAnimation('attack', false);
 
-                const targetHuman = humanInRange;
+                const capturedTarget = targetInRange;
 
                 this.sprite.onComplete = () => {
                     this._isAttacking = false;
                     this._setAnimation('move', true);
                     this.sprite.onComplete = null;
 
-                    // La infección ocurre idealmente al terminar el zarpazo (o usá el setTimeout acá adentro si querés delay)
-                    if (targetHuman && !targetHuman._infected && !targetHuman._turning) {
-                        // Verificamos si sigue relativamente cerca antes de infectar
-                        const finalDist = Utils.distance(this.x, this.y, targetHuman.x, targetHuman.y);
-                        if (finalDist < Config.zombieAttackRange + 20) { 
-                            targetHuman.startInfection(worldContainer, allZombies);
+                    const finalDist = Utils.distance(this.x, this.y, capturedTarget.x, capturedTarget.y);
+                    if (finalDist < Config.zombieAttackRange + 20) {
+                        
+                        if (capturedTarget.startInfection) {
+                            capturedTarget.startInfection(worldContainer, allZombies);
+                        } else if (capturedTarget.takeDamage) {
+                            capturedTarget.takeDamage();
                         }
                     }
                 };

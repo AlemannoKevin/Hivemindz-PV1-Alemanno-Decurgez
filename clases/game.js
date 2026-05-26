@@ -7,7 +7,7 @@ class Game {
         this.humans         = [];
         this.zombies        = [];
         this.bullets        = [];
-        this.officers       = [];
+        this.policia        = [];
         this.bulletsPolice  = [];
 
         setup().then(() => this.start());
@@ -83,15 +83,26 @@ class Game {
                 tries < 30 &&
                 Utils.distance(hx, hy, spawnX, spawnY) < 200
             );
-            this.humans.push(new Humano(hx, hy, this.worldContainer));
+            const esPeleador = Math.random() < Config.brawlerRatio;
+            this.humans.push(
+                esPeleador
+                    ? new Peleador(hx, hy, this.worldContainer)
+                    : new Humano(hx, hy, this.worldContainer)
+            );
         }
         
-        this.officers = [];
+        this.policia = [];
         for (let i = 0; i < Config.policiaCount; i++) {
-            const px = Utils.randomBetween(80, Config.worldWidth  - 80);
-            const py = Utils.randomBetween(80, Config.worldHeight - 80);
-            this.officers.push(new Policia(px, py, this.worldContainer));
+            const px      = Utils.randomBetween(80, Config.worldWidth  - 80);
+            const py      = Utils.randomBetween(80, Config.worldHeight - 80);
+            const esSwat  = Math.random() < Config.swatRatio;
+            this.policia.push(
+                esSwat
+                    ? new Swat(px, py, this.worldContainer)
+                    : new Policia(px, py, this.worldContainer)
+            );
         }
+
         this.bulletsPolice = [];
 
         this.app.ticker.add(delta => this._tick(delta));
@@ -105,8 +116,9 @@ class Game {
         this.player.update(delta);
 
         if (this.player.dead) {
-            console.log('Game over');
             this.app.ticker.stop();
+            const screen = document.getElementById('death-screen');
+            if (screen) screen.style.display = 'flex';
             return;
         }
 
@@ -115,8 +127,17 @@ class Game {
             human.update(this.humans, this.player, this.zombies, delta);
         }
 
+        const lmbActive  = Mouse.leftHeld && this.player.isZombie;
+        const lmbTargetX = Mouse.worldX(this.camera.offsetX);
+        const lmbTargetY = Mouse.worldY(this.camera.offsetY);
+
         for (const zombie of this.zombies) {
-            zombie.update(this.zombies, this.humans, delta, this.worldContainer);
+            const controlled = lmbActive && this._isOnScreen(zombie);
+            zombie.update(
+                this.zombies, this.humans, this.policia,
+                delta, this.worldContainer,
+                controlled, lmbTargetX, lmbTargetY
+            );
         }
 
         for (let i = this.bullets.length - 1; i >= 0; i--) {
@@ -128,8 +149,15 @@ class Game {
             }
         }
 
-        for (const policia of this.officers) {
-            policia.update(this.zombies, this.player, this.bulletsPolice, this.worldContainer, delta);
+        for (const policia of this.policia) {
+            policia.update(this.zombies, this.humans, this.player, this.bulletsPolice, this.worldContainer, delta);
+        }
+
+        for (let i = this.policia.length - 1; i >= 0; i--) {
+            if (this.policia[i]._dead) {
+                this.worldContainer.removeChild(this.policia[i].container);
+                this.policia.splice(i, 1);
+            }
         }
 
         for (let i = this.bulletsPolice.length - 1; i >= 0; i--) {
@@ -149,6 +177,16 @@ class Game {
         }
 
         this.camera.followTarget(this.player.x, this.player.y);
+        const aliveHumans = this.humans.filter(h => !h._infected).length;
+        const counter = document.getElementById('human-counter');
+        if (counter) counter.textContent = `HUMANS: ${aliveHumans}`;
+    }
+
+    _isOnScreen(entity) {
+        const sx = entity.x * Config.zoom + this.camera.offsetX;
+        const sy = entity.y * Config.zoom + this.camera.offsetY;
+        return sx >= 0 && sx <= window.innerWidth &&
+            sy >= 0 && sy <= window.innerHeight;
     }
 };
 

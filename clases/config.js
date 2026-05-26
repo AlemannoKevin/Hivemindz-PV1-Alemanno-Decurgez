@@ -14,6 +14,14 @@ const Config = {
     humanFleeRange:   180,    // Distancia de detección de zombies en px
     humanFleeFrames:  240,    // Duración del escape (4s a 60fps)
 
+    // Peleador
+    brawlerRatio:        0.2,
+    brawlerBatRange:     100,
+    brawlerBatForce:     25,
+    brawlerBatCooldown:  70,
+    brawlerSlowDuration: 100,  
+    brawlerSlowFactor:   0.15,  
+
     // Boids
     boidsSepRadius:   50,     // Separación
     boidsAliRadius:   100,    // Alineación
@@ -32,17 +40,30 @@ const Config = {
     zombieAttackCooldown: 300, 
 
     // Policía
-    policiaCount:           8,
-    policiaSpeed:           1.2,
-    policiaDetectRange:     200,
-    policiaShootRange:      220,
+    policiaCount:           12,
+    policiaHits:            3,
+    policiaSpeed:           1.5,
+    policiaDetectRange:     225,
+    policiaShootRange:      225,
     policiaDodgeSpeed:      1.5,
-    policiaShootCooldown:   90,
+    policiaShootCooldown:   70,
     policiaBulletSpeed:     5,
     policiaBulletDamage:    0.25,
     policiaKnockback:       20,
+    policiaFollowRange:     250,
+
+    // SWAT
+    swatRatio:            0.25,  
+    swatSpeed:            1.9,   
+    swatHits:             6,     
+    swatSpreadAngle:      0.25,  
+    swatBulletDamage:     0.5,   
+    swatKnockback:        36,    
     
     //Bala
     playerBulletSpeed:    2,
     playerBulletCooldown: 240,
+
+    // LMB swarm
+    lmbSpeedBoost:        1.1,
 };

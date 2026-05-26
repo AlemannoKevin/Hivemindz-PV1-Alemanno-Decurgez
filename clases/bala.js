@@ -79,10 +79,10 @@ class BalaPolicia extends GameObject {
             const dist = Utils.distance(this.x, this.y, zombie.x, zombie.y);
             if (dist < 16) {
                 const speed = Math.hypot(this.vx, this.vy);
-                zombie.x += (this.vx / speed) * Config.policiaKnockback;
-                zombie.y += (this.vy / speed) * Config.policiaKnockback;
+                zombie.x += (this.vx / speed) * (this._knockback ?? Config.policiaKnockback);
+                zombie.y += (this.vy / speed) * (this._knockback ?? Config.policiaKnockback);
                 World.clampToBounds(zombie);
-                zombie._hp = (zombie._hp ?? 1) - Config.policiaBulletDamage;
+                zombie._hp = (zombie._hp ?? 1) - (this._damage ?? Config.policiaBulletDamage);
 
                 if (zombie.sprite) {
                     zombie.sprite.tint = 0xff4444;
