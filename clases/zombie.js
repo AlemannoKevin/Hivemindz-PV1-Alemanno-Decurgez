@@ -32,12 +32,10 @@ class Zombie extends GameObject{
     
     flipSprite() {
         if (!this.sprite) return;
-
-        if (this.headingX > 0) {
-            this.sprite.scale.x = 1;
-        } else if (this.headingX < 0) {
-            this.sprite.scale.x = -1;
-        }
+        const speed = Math.hypot(this.headingX, this.headingY);
+        if (speed < 0.1) return;
+        if (this.headingX > 0.1)       this.sprite.scale.x =  1;
+        else if (this.headingX < -0.1) this.sprite.scale.x = -1;
     }
     
     _setAnimation(animName, loop = true) {
@@ -112,6 +110,15 @@ class Zombie extends GameObject{
             alignmentWeight:  0.5,
             cohesionWeight:   0.7,
         });
+        
+        const obstacleForce = Utils.repelFromPoint(
+            this.x, this.y,
+            Game.instance.obstacle.x, Game.instance.obstacle.y,
+            Config.obstacleRepelRadius,
+            Config.obstacleRepelForce
+        );
+        goalX += obstacleForce.x;
+        goalY += obstacleForce.y;
 
         const direction = Boids.blendWithGoal(goalX, goalY, boidsForce.x, boidsForce.y, 0.65);
         this.headingX = direction.x;

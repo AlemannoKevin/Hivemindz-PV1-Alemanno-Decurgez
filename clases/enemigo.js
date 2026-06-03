@@ -67,14 +67,15 @@ class Policia extends GameObject {
 
     flipSprite(headingX) {
         if (!this.sprite) return;
-        if (headingX > 0)      this.sprite.scale.x =  1;
-        else if (headingX < 0) this.sprite.scale.x = -1;
+        if (Math.abs(headingX) < 0.1) return; // ignore tiny values
+        if (headingX > 0)  this.sprite.scale.x =  1;
+        else               this.sprite.scale.x = -1;
     }
 
-    update(allZombies, allHumans, player, balas, worldContainer, deltaTime) {
-        this.currentState.update(this, { allZombies, allHumans, player, balas, worldContainer, deltaTime });
+    update(allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime) {
         if (this._dead) return;
         if (this._iFrames > 0) this._iFrames -= deltaTime;
+        this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;
@@ -109,15 +110,14 @@ class Swat extends Policia {
         this.sprite.gotoAndPlay(0);
     }
 
-    update(allZombies, allHumans, player, balas, worldContainer, deltaTime) {
+    update(allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime) {
         if (this._dead) return;
         if (this._iFrames > 0) this._iFrames -= deltaTime;
 
         this._lastContext = { allZombies, allHumans, player, balas, worldContainer, deltaTime };
-        this.currentState.update(this, { allZombies, allHumans, player, balas, worldContainer, deltaTime });
+        this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
 
         World.clampToBounds(this);
-        if (this._wanderDirX !== 0) this.flipSprite(this._wanderDirX);
         this.container.x = this.x;
         this.container.y = this.y;
     }

@@ -34,8 +34,22 @@ class HumanoWanderState {
             alignmentWeight:  0.7,
             cohesionWeight:   0.6,
         });
+
+        let goalX = humano._wanderDirX; 
+        let goalY = humano._wanderDirY;
+
+        const obstacleForce = Utils.repelFromPoint(
+            humano.x, humano.y,
+            Game.instance.obstacle.x, Game.instance.obstacle.y,
+            Config.obstacleRepelRadius,
+            Config.obstacleRepelForce
+        );
+
+        goalX += obstacleForce.x;
+        goalY += obstacleForce.y;
+
         const direction = Boids.blendWithGoal(
-            humano._wanderDirX, humano._wanderDirY,
+            goalX, goalY, 
             boidsForce.x, boidsForce.y,
             0.45
         );
@@ -81,15 +95,30 @@ class HumanoFleeState {
         }
 
         const awayAngle = Utils.angleTo(closestThreatX, closestThreatY, humano.x, humano.y);
-        const goalX = Math.cos(awayAngle);
-        const goalY = Math.sin(awayAngle);
+        let goalX = Math.cos(awayAngle);
+        let goalY = Math.sin(awayAngle);
 
         const boidsForce = Boids.computeSteering(humano, allHumans, {
             separationWeight: 0,
             alignmentWeight:  1.4,
             cohesionWeight:   0.2,
         });
-        const direction = Boids.blendWithGoal(goalX, goalY, boidsForce.x, boidsForce.y, 0.7);
+
+        const obstacleForce = Utils.repelFromPoint(
+            humano.x, humano.y,
+            Game.instance.obstacle.x, Game.instance.obstacle.y,
+            Config.obstacleRepelRadius,
+            Config.obstacleRepelForce
+        );
+
+        goalX += obstacleForce.x;
+        goalY += obstacleForce.y;
+
+        const direction = Boids.blendWithGoal(
+            goalX, goalY, 
+            boidsForce.x, boidsForce.y,
+            0.45
+        );;
 
         humano.headingX = direction.x;
         humano.headingY = direction.y;
@@ -109,8 +138,20 @@ class PoliciaWanderState {
     }
 
     update(policia, context) {
-        const { allZombies, player, deltaTime } = context;
+        const { allZombies, allPolicia, allHumans, player, deltaTime } = context;
 
+        const allAgents = context.allPolicia || [];
+        for (const other of [...allAgents, ...allHumans]) {
+            if (other === policia || other._dead || other._infected) continue;
+            const dx   = policia.x - other.x;
+            const dy   = policia.y - other.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0 && dist < Config.boidsSepRadius * 1.5) {
+                const push = (Config.boidsSepRadius * 1.5 - dist) / (Config.boidsSepRadius * 1.5) * 1.5;
+                policia.x += (dx / dist) * push;
+                policia.y += (dy / dist) * push;
+            }
+        }
         
         if (player.isZombie) {
             const dp = Utils.distance(policia.x, policia.y, player.x, player.y);
@@ -128,7 +169,7 @@ class PoliciaWanderState {
             }
         }
 
-        const allHumans = context.allHumans || [];
+        //const allHumans = context.allHumans || [];
         let cohX = 0, cohY = 0, cohCount = 0;
         for (const human of allHumans) {
             if (human._infected) continue;
@@ -154,8 +195,18 @@ class PoliciaWanderState {
             }
         }
 
+        const obstacleForce = Utils.repelFromPoint(
+            policia.x, policia.y,
+            Game.instance.obstacle.x, Game.instance.obstacle.y,
+            Config.obstacleRepelRadius,
+            Config.obstacleRepelForce
+        );
+        policia.x += obstacleForce.x;
+        policia.y += obstacleForce.y;
+
         policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime;
         policia.y += policia._wanderDirY * Config.policiaSpeed * deltaTime;
+        if (policia.flipSprite) policia.flipSprite(policia._wanderDirX);
     }
 
     exit(policia) { }
@@ -165,10 +216,24 @@ class PoliciaWanderState {
 class PoliciaCombatState {
     enter(policia) {
         if (policia._shootTimer === undefined) policia._shootTimer = 0;
+        policia._isShooting = false;
     }
 
     update(policia, context) {
-        const { allZombies, player, balas, worldContainer, deltaTime } = context;
+        const { allZombies, allHumans, player, balas, worldContainer, deltaTime } = context;
+
+        const allAgents = context.allAgents || [];
+        for (const other of [...allAgents, ...allHumans]) {
+            if (other === policia || other._dead || other._infected) continue;
+            const dx   = policia.x - other.x;
+            const dy   = policia.y - other.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 0 && dist < Config.boidsSepRadius * 1.5) {
+                const push = (Config.boidsSepRadius * 1.5 - dist) / (Config.boidsSepRadius * 1.5) * 1.5;
+                policia.x += (dx / dist) * push;
+                policia.y += (dy / dist) * push;
+            }
+        }
 
         let nearestTarget = null;
         let nearestDist   = Config.policiaDetectRange * 1.3;
@@ -177,47 +242,61 @@ class PoliciaCombatState {
             const d = Utils.distance(policia.x, policia.y, zombie.x, zombie.y);
             if (d < nearestDist) { nearestDist = d; nearestTarget = zombie; }
         }
-
         if (player.isZombie) {
             const dp = Utils.distance(policia.x, policia.y, player.x, player.y);
             if (dp < nearestDist) { nearestDist = dp; nearestTarget = player; }
         }
 
         if (!nearestTarget) {
+            policia._isShooting = false;
             policia.setState(new PoliciaWanderState());
             return;
         }
 
-        let dodgeX = 0, dodgeY = 0;
-        for (const zombie of allZombies) {
-            const dx   = policia.x - zombie.x;
-            const dy   = policia.y - zombie.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist > 0 && dist < Config.policiaDetectRange) {
-                const strength = (Config.policiaDetectRange - dist) / Config.policiaDetectRange;
-                dodgeX += (dx / dist) * strength;
-                dodgeY += (dy / dist) * strength;
-            }
+        if (policia.flipSprite) {
+            const dirX = nearestTarget.x - policia.x;
+            policia.flipSprite(dirX > 0 ? 1 : -1);
         }
-        if (nearestTarget && policia.flipSprite) {
-            const facingX = nearestTarget.x - policia.x;
-            policia.flipSprite(facingX);
+
+        if (policia._isShooting) return;
+
+        const diff = nearestDist - Config.policiaIdealRange;
+        if (Math.abs(diff) > 20) {
+            const angle = Utils.angleTo(
+                policia.x, policia.y,
+                nearestTarget.x, nearestTarget.y
+            );
+
+            const dir = diff > 0 ? 1 : -1;
+
+            const obstacleForce = Utils.repelFromPoint(
+                policia.x, policia.y,
+                Game.instance.obstacle.x, Game.instance.obstacle.y,
+                Config.obstacleRepelRadius,
+                Config.obstacleRepelForce
+            );
+            policia.x += obstacleForce.x;
+            policia.y += obstacleForce.y;
+
+            policia.x += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime;
+            policia.y += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime;
         }
-        const dodgeDir = Utils.normalize(dodgeX, dodgeY);
-        policia.x += dodgeDir.x * Config.policiaDodgeSpeed * deltaTime;
-        policia.y += dodgeDir.y * Config.policiaDodgeSpeed * deltaTime;
 
         policia._shootTimer -= deltaTime;
         if (policia._shootTimer <= 0 &&
             nearestDist < Config.policiaShootRange) {
-            policia._shootTimer = Config.policiaShootCooldown;
+            policia._shootTimer  = Config.policiaShootCooldown;
+            policia._isShooting  = true;
 
             if (policia._setAnimation) {
                 policia._setAnimation('attack', false);
                 policia.sprite.onComplete = () => {
+                    policia._isShooting = false;
                     policia._setAnimation('move', true);
                     policia.sprite.onComplete = null;
                 };
+            } else {
+                policia._isShooting = false;
             }
 
             if (policia._shoot) {
@@ -232,7 +311,9 @@ class PoliciaCombatState {
         }
     }
 
-    exit(policia) { }
+    exit(policia) {
+        policia._isShooting = false;
+    }
 }
 
 class PeleadorWanderState {
@@ -256,8 +337,22 @@ class PeleadorWanderState {
             alignmentWeight:  0.7,
             cohesionWeight:   0.6,
         });
+
+        let goalX = peleador._wanderDirX; 
+        let goalY = peleador._wanderDirY;
+
+        const obstacleForce = Utils.repelFromPoint(
+            peleador.x, peleador.y,
+            Game.instance.obstacle.x, Game.instance.obstacle.y,
+            Config.obstacleRepelRadius,
+            Config.obstacleRepelForce
+        );
+
+        goalX += obstacleForce.x;
+        goalY += obstacleForce.y;
+
         const direction = Boids.blendWithGoal(
-            peleador._wanderDirX, peleador._wanderDirY,
+            goalX, goalY, 
             boidsForce.x, boidsForce.y,
             0.45
         );
@@ -274,39 +369,54 @@ class PeleadorWanderState {
 
 class PeleadorAttackState {
     enter(peleador) {
-        this._swingBat(peleador);
         peleador._batTimer = Config.brawlerBatCooldown;
 
-        if (!peleador._worldContainer) return;
-        const ring = new PIXI.Graphics();
-        peleador._worldContainer.addChild(ring);
+        if (brawlerAnimations.attack && peleador.sprite) {
+            peleador.sprite.textures = brawlerAnimations.attack;
+            peleador.sprite.loop     = false;
+            peleador.sprite.gotoAndPlay(0);
+            peleador.sprite.onComplete = () => {
+                if (brawlerAnimations.move && peleador.sprite) {
+                    peleador.sprite.textures = brawlerAnimations.move;
+                    peleador.sprite.loop     = true;
+                    peleador.sprite.gotoAndPlay(0);
+                    peleador.sprite.onComplete = null;
+                }
+            };
+        }
 
-        let frame    = 0;
-        const frames = 20;
-        const cx     = peleador.x;
-        const cy     = peleador.y;
-
-        const animate = () => {
-            frame++;
-            const progress = frame / frames;
-            const radius   = Config.brawlerBatRange * progress;
-            const alpha    = 1 - progress;
-
-            ring.clear();
-            ring.lineStyle(2, 0xffee58, alpha);
-            ring.beginFill(0xffee58, alpha * 0.15);
-            ring.drawCircle(cx, cy, radius);
-            ring.endFill();
-
-            if (frame < frames) {
+        if (peleador._worldContainer) {
+            setTimeout(() => {
+                this._swingBat(peleador);
+                const ring   = new PIXI.Graphics();
+                peleador._worldContainer.addChild(ring);
+                let frame    = 0;
+                const frames = 20;
+                const cx     = peleador.x;
+                const cy     = peleador.y;
+                const animate = () => {
+                    frame++;
+                    const progress = frame / frames;
+                    const radius   = Config.brawlerBatRange * progress;
+                    const alpha    = 1 - progress;
+                    ring.clear();
+                    ring.lineStyle(2, 0xffee58, alpha);
+                    ring.beginFill(0xffee58, alpha * 0.15);
+                    ring.drawCircle(cx, cy, radius);
+                    ring.endFill();
+                    if (frame < frames) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        ring.clear();
+                        peleador._worldContainer.removeChild(ring);
+                    }
+                };
                 requestAnimationFrame(animate);
-            } else {
-                ring.clear();
-                peleador._worldContainer.removeChild(ring);
-            }
-        };
-        requestAnimationFrame(animate);
+            }, 250);
+        }
     }
+
+        
 
     _swingBat(peleador) {
         const allZombies = peleador._lastZombies || [];
@@ -314,7 +424,7 @@ class PeleadorAttackState {
             const dist = Utils.distance(peleador.x, peleador.y, zombie.x, zombie.y);
             if (dist < Config.brawlerBatRange && dist > 0) {
                 const angle     = Utils.angleTo(peleador.x, peleador.y, zombie.x, zombie.y);
-                // Closer zombies get pushed harder
+              
                 const closeness = 1 - (dist / Config.brawlerBatRange);
                 const force     = Config.brawlerBatForce * (0.5 + closeness * 0.5);
                 zombie._pushVx  = Math.cos(angle) * force;
@@ -350,11 +460,26 @@ class PeleadorAttackState {
             alignmentWeight:  0.7,
             cohesionWeight:   0.6,
         });
+
+        let goalX = peleador._wanderDirX; 
+        let goalY = peleador._wanderDirY;
+
+        const obstacleForce = Utils.repelFromPoint(
+            peleador.x, peleador.y,
+            Game.instance.obstacle.x, Game.instance.obstacle.y,
+            Config.obstacleRepelRadius,
+            Config.obstacleRepelForce
+        );
+
+        goalX += obstacleForce.x;
+        goalY += obstacleForce.y;
+
         const direction = Boids.blendWithGoal(
-            peleador._wanderDirX, peleador._wanderDirY,
+            goalX, goalY, 
             boidsForce.x, boidsForce.y,
             0.45
         );
+
         peleador.headingX = direction.x;
         peleador.headingY = direction.y;
         peleador.x += direction.x * Config.humanWalkSpeed * deltaTime;

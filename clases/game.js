@@ -1,9 +1,14 @@
 class Game {
+    static instance = null;
+
     constructor() {
+        Game.instance = this;
+
         this.app            = null;
         this.worldContainer = null;
         this.camera         = null;
         this.player         = null;
+        this.obstacle       = null;
         this.humans         = [];
         this.zombies        = [];
         this.bullets        = [];
@@ -37,6 +42,11 @@ class Game {
         
         World.buildBackground(this.worldContainer);
 
+        this.obstacle = new Obstacle(
+            Config.worldWidth  / 2 + 150,
+            Config.worldHeight / 2 + 100,
+            this.worldContainer
+        );
         
         Input.init();
         Mouse.init();
@@ -48,6 +58,7 @@ class Game {
         const spawnX = Config.worldWidth  / 2;
         const spawnY = Config.worldHeight / 2;
         this.player  = new Player(spawnX, spawnY, this.worldContainer);
+        this.player._worldContainer = this.worldContainer;
 
         
         window.addEventListener('mousedown', e => {
@@ -72,6 +83,10 @@ class Game {
             }
         });
 
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space') this.player.dash();
+        });
+
         this.humans = [];
         for (let i = 0; i < Config.humanCount; i++) {
             let hx, hy, tries = 0;
@@ -93,9 +108,18 @@ class Game {
         
         this.policia = [];
         for (let i = 0; i < Config.policiaCount; i++) {
-            const px      = Utils.randomBetween(80, Config.worldWidth  - 80);
-            const py      = Utils.randomBetween(80, Config.worldHeight - 80);
-            const esSwat  = Math.random() < Config.swatRatio;
+            let px, py, tries = 0;
+            do {
+                px = Utils.randomBetween(80, Config.worldWidth  - 80);
+                py = Utils.randomBetween(80, Config.worldHeight - 80);
+                tries++;
+            } while (
+                tries < 30 &&
+                this.policia.some(c =>
+                    Utils.distance(px, py, c.x, c.y) < 120
+                )
+            );
+            const esSwat = Math.random() < Config.swatRatio;
             this.policia.push(
                 esSwat
                     ? new Swat(px, py, this.worldContainer)
@@ -150,7 +174,7 @@ class Game {
         }
 
         for (const policia of this.policia) {
-            policia.update(this.zombies, this.humans, this.player, this.bulletsPolice, this.worldContainer, delta);
+            policia.update(this.zombies, this.humans, this.policia, this.player, this.bulletsPolice, this.worldContainer, delta);
         }
 
         for (let i = this.policia.length - 1; i >= 0; i--) {

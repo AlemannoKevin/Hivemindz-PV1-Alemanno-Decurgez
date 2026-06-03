@@ -10,51 +10,64 @@
     return frames;
 }*/
 
+let brawlerAnimations = {};
 let playerAnimations  = {};
 let zeroAnimations    = {};
 let humanAnimations   = {};
-let brawlerAnimations = {};
 let zombieAnimations  = {};
 let policeAnimations  = {};
 let agentAnimations   = {};
+
+function trimFrames(frames, trimPx = 1) {
+    return frames.map(texture => {
+        const orig = texture.frame;
+        const trimmed = new PIXI.Rectangle(
+            orig.x      + trimPx,
+            orig.y      + trimPx,
+            orig.width  - trimPx * 2,
+            orig.height - trimPx * 2
+        );
+        return new PIXI.Texture(texture.baseTexture, trimmed);
+    });
+}
 
 async function setup() {
     
     const spriteSheet = await PIXI.Assets.load('sprites/atlas.json');
 
     zeroAnimations = {
-        move:   spriteSheet.animations['zero_Move/zero_Move'],
-        attack: spriteSheet.animations['zero_Attack/zero_Attack'],
-        idle:   spriteSheet.animations['zero_Idle/zero_Idle'],
+        move:   trimFrames(spriteSheet.animations['zero_Move/zero_Move'], 1),
+        attack: trimFrames(spriteSheet.animations['zero_Attack/zero_Attack'], 1),
+        idle:   trimFrames(spriteSheet.animations['zero_Idle/zero_Idle'], 1),
     };
 
     playerAnimations = {
-        move:   spriteSheet.animations['player_Move/player_Move'],
-        idle:   spriteSheet.animations['player_Idle/player_Idle'],
+        move:   trimFrames(spriteSheet.animations['player_Move/player_Move'], 1),
+        idle:   trimFrames(spriteSheet.animations['player_Idle/player_Idle'], 1),
     };
     
     humanAnimations = {
-        move: spriteSheet.animations['human_Move/human_Move'],
+        move: trimFrames(spriteSheet.animations['human_Move/human_Move'], 1),
     };
 
     brawlerAnimations = {
-        move: spriteSheet.animations['brawler_Move/brawler_Move'],
-        attack: spriteSheet.animations['brawler_Attack/brawler_Attack'],
+        move: trimFrames(spriteSheet.animations['brawler_Move/brawler_Move'], 1),
+        attack: trimFrames(spriteSheet.animations['brawler_Attack/brawler_Attack'], 1),
     }
 
     zombieAnimations = {
-        move:   spriteSheet.animations['zombie_Move/zombie_Move'],
-        attack: spriteSheet.animations['zombie_Attack/zombie_Attack'],
+        move:   trimFrames(spriteSheet.animations['zombie_Move/zombie_Move'], 1),
+        attack: trimFrames(spriteSheet.animations['zombie_Attack/zombie_Attack'], 1),
     };
 
     policeAnimations = {
-        move: spriteSheet.animations['police_Move/police_Move'],
-        attack: spriteSheet.animations['police_Attack/police_Attack'],
+        move: trimFrames(spriteSheet.animations['police_Move/police_Move'], 1),
+        attack: trimFrames(spriteSheet.animations['police_Attack/police_Attack'], 1),
     };
 
     agentAnimations = {
-        move: spriteSheet.animations['agent_Move/agent_Move'],
-        attack: spriteSheet.animations['agent_Attack/agent_Attack'],
+        move: trimFrames(spriteSheet.animations['agent_Move/agent_Move'], 1),
+        attack: trimFrames(spriteSheet.animations['agent_Attack/agent_Attack'], 1),
     };
 }
 

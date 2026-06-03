@@ -12,7 +12,9 @@ const Config = {
     humanWalkSpeed:   0.9,
     humanFleeSpeed:   2.0,    // Velocidad de escape
     humanFleeRange:   180,    // Distancia de detección de zombies en px
-    humanFleeFrames:  240,    // Duración del escape (4s a 60fps)
+    humanFleeFrames:  240,
+    obstacleRepelRadius: 120,  
+    obstacleRepelForce:  2.5,   
 
     // Peleador
     brawlerRatio:        0.2,
@@ -31,7 +33,10 @@ const Config = {
     playerMaxHealth: 8,
     playerSpeed:     2.5,
     aoeRadius:       125,    // Radio del ataque inicial/transformación
-    aoeFadeFrames:   30,     
+    aoeFadeFrames:   30,
+    playerDashSpeed:    16,
+    playerDashDuration: 25,   
+    playerDashCooldown: 180,     
 
     // Zombies
     zombieSpeed:          1.3,
@@ -51,6 +56,8 @@ const Config = {
     policiaBulletDamage:    0.25,
     policiaKnockback:       20,
     policiaFollowRange:     250,
+    policiaIdealRange:      160,   
+    policiaStopToShoot:     true,
 
     // SWAT
     swatRatio:            0.25,  

@@ -51,8 +51,10 @@ class Humano extends GameObject {
 
     flipSprite() {
         if (!this.sprite) return;
-        if (this.headingX > 0)      this.sprite.scale.x =  1;
-        else if (this.headingX < 0) this.sprite.scale.x = -1;
+        const speed = Math.hypot(this.headingX, this.headingY);
+        if (speed < 0.1) return;  
+        if (this.headingX > 0.1)       this.sprite.scale.x =  1;
+        else if (this.headingX < -0.1) this.sprite.scale.x = -1;
     }
 
     startInfection(worldContainer, zombies) {
@@ -108,7 +110,6 @@ class Peleador extends Humano {
 
         this.setState(new PeleadorWanderState());
 
-        if (this.sprite) this.sprite.tint = 0xffccbc;
     }
 
     setState(newState) {

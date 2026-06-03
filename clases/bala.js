@@ -38,6 +38,16 @@ class Bala extends GameObject {
                 return;
             }
         }
+
+        for (const cop of (Game.instance?.policia || [])) {
+            if (cop._dead) continue;
+            const dist = Utils.distance(this.x, this.y, cop.x, cop.y);
+            if (dist < 20) {
+                cop.takeDamage();
+                this.dead = true;
+                return;
+            }
+        }
     }
 
     destroy() {
@@ -92,15 +102,6 @@ class BalaPolicia extends GameObject {
                 }
 
                 if (zombie._hp <= 0) zombie._dead = true;
-                this.dead = true;
-                return;
-            }
-        }
-
-        if (player && player.isZombie) {
-            const dp = Utils.distance(this.x, this.y, player.x, player.y);
-            if (dp < 20) {
-                player.takeDamage();
                 this.dead = true;
                 return;
             }

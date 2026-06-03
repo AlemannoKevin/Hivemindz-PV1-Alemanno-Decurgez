@@ -29,4 +29,14 @@ const Utils = {
         const length = Math.hypot(dx, dy);
         return length > 0 ? { x: dx / length, y: dy / length } : { x: 0, y: 0 };
     },
+
+    repelFromPoint(entityX, entityY, pointX, pointY, radius, force) {
+        const dx   = entityX - pointX;
+        const dy   = entityY - pointY;
+        const dist = Math.hypot(dx, dy);
+        if (dist === 0 || dist >= radius) return { x: 0, y: 0 };
+        const strength = (radius - dist) / radius * force;
+        const norm     = Utils.normalize(dx, dy);
+        return { x: norm.x * strength, y: norm.y * strength };
+    },
 };
