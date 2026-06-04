@@ -56,8 +56,10 @@ class HumanoWanderState {
 
         humano.headingX = direction.x;
         humano.headingY = direction.y;
-        humano.x += direction.x * Config.humanWalkSpeed * deltaTime;
-        humano.y += direction.y * Config.humanWalkSpeed * deltaTime;
+        
+        const pitMult = context.pitMult ?? 1;
+        humano.x += direction.x * Config.humanWalkSpeed * deltaTime * pitMult;
+        humano.y += direction.y * Config.humanWalkSpeed * deltaTime * pitMult;
     }
 
     exit(humano) { }
@@ -122,8 +124,9 @@ class HumanoFleeState {
 
         humano.headingX = direction.x;
         humano.headingY = direction.y;
-        humano.x += direction.x * Config.humanFleeSpeed * deltaTime;
-        humano.y += direction.y * Config.humanFleeSpeed * deltaTime;
+        const pitMult = context.pitMult ?? 1;
+        humano.x += direction.x * Config.humanWalkSpeed * deltaTime * pitMult;
+        humano.y += direction.y * Config.humanWalkSpeed * deltaTime * pitMult;
     }
 
     exit(humano) {
@@ -204,8 +207,9 @@ class PoliciaWanderState {
         policia.x += obstacleForce.x;
         policia.y += obstacleForce.y;
 
-        policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime;
-        policia.y += policia._wanderDirY * Config.policiaSpeed * deltaTime;
+        const pitMult = policia._pitSlowed ? Config.pitSlowFactor : 1;
+        policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime * pitMult;
+        policia.y += policia._wanderDirY * Config.policiaSpeed * deltaTime * pitMult;
         if (policia.flipSprite) policia.flipSprite(policia._wanderDirX);
     }
 
@@ -255,7 +259,7 @@ class PoliciaCombatState {
 
         if (policia.flipSprite) {
             const dirX = nearestTarget.x - policia.x;
-            policia.flipSprite(dirX > 0 ? 1 : -1);
+            if (Math.abs(dirX) > 8) policia.flipSprite(dirX > 0 ? 1 : -1);
         }
 
         if (policia._isShooting) return;
@@ -278,13 +282,15 @@ class PoliciaCombatState {
             policia.x += obstacleForce.x;
             policia.y += obstacleForce.y;
 
-            policia.x += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime;
-            policia.y += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime;
+            const pitMult = policia._pitSlowed ? Config.pitSlowFactor : 1;
+            policia.x += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime * pitMult;
+            policia.y += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime * pitMult;
         }
 
         policia._shootTimer -= deltaTime;
         if (policia._shootTimer <= 0 &&
-            nearestDist < Config.policiaShootRange) {
+            nearestDist < Config.policiaShootRange &&
+            !policia._pitNoAtack) {
             policia._shootTimer  = Config.policiaShootCooldown;
             policia._isShooting  = true;
 
@@ -368,7 +374,9 @@ class PeleadorWanderState {
 
 
 class PeleadorAttackState {
+    
     enter(peleador) {
+        if (peleador._pitNoAtack) return; // el charco bloquea el inicio del ataque
         peleador._batTimer = Config.brawlerBatCooldown;
 
         if (brawlerAnimations.attack && peleador.sprite) {
@@ -418,18 +426,29 @@ class PeleadorAttackState {
 
         
 
-    _swingBat(peleador) {
+     _swingBat(peleador) {
         const allZombies = peleador._lastZombies || [];
         for (const zombie of allZombies) {
             const dist = Utils.distance(peleador.x, peleador.y, zombie.x, zombie.y);
             if (dist < Config.brawlerBatRange && dist > 0) {
                 const angle     = Utils.angleTo(peleador.x, peleador.y, zombie.x, zombie.y);
-              
                 const closeness = 1 - (dist / Config.brawlerBatRange);
                 const force     = Config.brawlerBatForce * (0.5 + closeness * 0.5);
                 zombie._pushVx  = Math.cos(angle) * force;
                 zombie._pushVy  = Math.sin(angle) * force;
                 zombie._slowTimer = Config.brawlerSlowDuration;
+            }
+        }
+
+        const player = Game.instance?.player;
+        if (player && player.isZombie) {
+            const dist = Utils.distance(peleador.x, peleador.y, player.x, player.y);
+            if (dist < Config.brawlerBatRange && dist > 0) {
+                const angle     = Utils.angleTo(peleador.x, peleador.y, player.x, player.y);
+                const closeness = 1 - (dist / Config.brawlerBatRange);
+                const force     = Config.brawlerBatForce * (0.5 + closeness * 0.5);
+                player._pushVx  = Math.cos(angle) * force;
+                player._pushVy  = Math.sin(angle) * force;
             }
         }
     }

@@ -50,6 +50,7 @@ class Zombie extends GameObject{
     update(allZombies, allHumans, allPolicia, deltaTime, worldContainer, lmbControlled = false, lmbX = 0, lmbY = 0) {
     
         if (this._slowTimer > 0) this._slowTimer -= deltaTime;
+
         for (const other of allZombies) {
             if (other === this) continue;
             const dx = this.x - other.x;
@@ -80,14 +81,22 @@ class Zombie extends GameObject{
         let goalX, goalY;
         let speedBoost = 1;
 
-        if (lmbControlled) {
-           
+        const enOrbita = Game.instance?._lmbUpgrade === 'zaturn'
+            && Mouse.leftHeld
+            && this._orbitTargetX !== undefined;
+
+        if (enOrbita) {
+            // Caminamos hacia el punto objetivo del anillo (que rota en game.js)
+            const dir = Utils.normalize(this._orbitTargetX - this.x, this._orbitTargetY - this.y);
+            goalX      = dir.x;
+            goalY      = dir.y;
+            speedBoost = Config.orbitSpeedBoost;
+        } else if (lmbControlled) {
             const dir = Utils.normalize(lmbX - this.x, lmbY - this.y);
-            goalX     = dir.x;
-            goalY     = dir.y;
+            goalX      = dir.x;
+            goalY      = dir.y;
             speedBoost = Config.lmbSpeedBoost;
         } else {
-           
             if (nearestTarget) {
                 const angle = Utils.angleTo(this.x, this.y, nearestTarget.x, nearestTarget.y);
                 goalX = Math.cos(angle);
@@ -124,7 +133,8 @@ class Zombie extends GameObject{
         this.headingX = direction.x;
         this.headingY = direction.y;
 
-        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost;
+        const orbitBoost = (Game.instance?._lmbUpgrade === 'orbit') ? Config.orbitSpeedBoost : 1;
+        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost * orbitBoost;
         this.x += direction.x * Config.zombieSpeed * speedMultiplier * deltaTime;
         this.y += direction.y * Config.zombieSpeed * speedMultiplier * deltaTime;
 

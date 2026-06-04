@@ -81,7 +81,11 @@ class Humano extends GameObject {
     }
 
     update(allHumans, player, allZombies, deltaTime) {
-    
+
+        // Reseteamos flags del charco cada frame (CharcoPit los vuelve a poner si aplica)
+        this._pitSlowed  = false;
+        this._pitNoAtack = false;
+
         for (const other of allHumans) {
             if (other === this) continue;
             const dx = this.x - other.x;
@@ -94,12 +98,48 @@ class Humano extends GameObject {
             }
         }
 
-        this.currentState.update(this, { allHumans, player, allZombies, deltaTime });
+        // Pasamos el slowFactor al estado para que lo use al mover
+        const pitMult = this._pitSlowed ? Config.pitSlowFactor : 1;
+        this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult });
 
         this.flipSprite();
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;
+
+        // Barra de infección (solo si tiene algo acumulado)
+        this._actualizarBarraInfeccion();
+    }
+
+    _actualizarBarraInfeccion() {
+        if (!this._infeccionAcum || this._infeccionAcum <= 0) {
+            if (this._barraInfeccion) this._barraInfeccion.visible = false;
+            return;
+        }
+        if (!this._barraInfeccion) this._crearBarraInfeccion();
+        this._barraInfeccion.visible = true;
+        const pct = Math.min(1, this._infeccionAcum / Config.daggerHitsToInfect);
+        this._barraFill.width = 28 * pct;
+    }
+
+    _crearBarraInfeccion() {
+        const contenedor = new PIXI.Container();
+        contenedor.position.set(-14, -42);
+
+        const fondo = new PIXI.Graphics();
+        fondo.beginFill(0x222222, 0.7);
+        fondo.drawRect(0, 0, 28, 4);
+        fondo.endFill();
+
+        this._barraFill = new PIXI.Graphics();
+        this._barraFill.beginFill(0x69f0ae);
+        this._barraFill.drawRect(0, 0, 28, 4);
+        this._barraFill.endFill();
+
+        contenedor.addChild(fondo);
+        contenedor.addChild(this._barraFill);
+        this._barraInfeccion = contenedor;
+        this.container.addChild(contenedor);
     }
 }
 

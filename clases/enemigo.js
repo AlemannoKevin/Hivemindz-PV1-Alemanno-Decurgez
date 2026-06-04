@@ -35,12 +35,44 @@ class Policia extends GameObject {
             this.sprite.play();
             this.container.addChild(this.sprite);
         }
+
+        this._crearBarraVida(Config.policiaHits);
+    }
+
+    _crearBarraVida(maxHits) {
+        this._maxHits = maxHits;
+        const cont = new PIXI.Container();
+        cont.position.set(-14, -36);
+        cont.visible = false;
+
+        const fondo = new PIXI.Graphics();
+        fondo.beginFill(0x222222, 0.7);
+        fondo.drawRect(0, 0, 28, 4);
+        fondo.endFill();
+
+        this._barraFill = new PIXI.Graphics();
+        this._barraFill.beginFill(0xff4444);
+        this._barraFill.drawRect(0, 0, 28, 4);
+        this._barraFill.endFill();
+
+        cont.addChild(fondo);
+        cont.addChild(this._barraFill);
+        this._barraVida = cont;
+        this.container.addChild(cont);
+    }
+
+    _actualizarBarraVida() {
+        if (!this._barraVida) return;
+        this._barraVida.visible = true;
+        const pct = Math.max(0, this._hits / this._maxHits);
+        this._barraFill.width = 28 * pct;
     }
 
     takeDamage() {
         if (this._iFrames > 0 || this._dead) return;
         this._hits -= 1;
-        this._iFrames = 60; 
+        this._iFrames = 60;
+        this._actualizarBarraVida();
 
         if (this.container.children[0]) {
             this.container.children[0].tint = 0xff4444;
@@ -74,6 +106,8 @@ class Policia extends GameObject {
 
     update(allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime) {
         if (this._dead) return;
+        this._pitSlowed  = false;
+        this._pitNoAtack = false;
         if (this._iFrames > 0) this._iFrames -= deltaTime;
         this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
         World.clampToBounds(this);
@@ -99,6 +133,7 @@ class Swat extends Policia {
             this.sprite.play();
             this.container.addChild(this.sprite);
         }
+        this._crearBarraVida(Config.swatHits);
     }
 
     _setAnimation(animName, loop = true) {
@@ -112,6 +147,8 @@ class Swat extends Policia {
 
     update(allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime) {
         if (this._dead) return;
+        this._pitSlowed  = false;
+        this._pitNoAtack = false;
         if (this._iFrames > 0) this._iFrames -= deltaTime;
 
         this._lastContext = { allZombies, allHumans, player, balas, worldContainer, deltaTime };

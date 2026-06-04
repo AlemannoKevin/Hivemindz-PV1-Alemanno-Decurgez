@@ -13,11 +13,13 @@ class Player {
 
         this._buildVisual();
         this._bulletCooldown = 0;
-        this._dashCooldown  = 0;
+        this._dashCooldown   = 0;
         this._worldContainer = null;
-        this._dashDuration  = 0;
-        this._dashVx        = 0;
-        this._dashVy        = 0;
+        this._dashDuration   = 0;
+        this._dashVx         = 0;
+        this._dashVy         = 0;
+        this._pushVx         = 0;
+        this._pushVy         = 0;
     }
 
     _buildVisual() {
@@ -183,7 +185,6 @@ class Player {
             this.x += this._dashVx * deltaTime;
             this.y += this._dashVy * deltaTime;
             this._dashDuration--;
-            // Spawn trail every other frame
             if (this._dashDuration % 2 === 0) {
                 this._spawnDashTrail(this._worldContainer);
             }
@@ -191,6 +192,13 @@ class Player {
             if (moveX !== 0 && moveY !== 0) { moveX *= 0.707; moveY *= 0.707; }
             this.x += moveX * Config.playerSpeed * deltaTime;
             this.y += moveY * Config.playerSpeed * deltaTime;
+        }
+
+        if (this._pushVx || this._pushVy) {
+            this.x += this._pushVx * deltaTime;
+            this.y += this._pushVy * deltaTime;
+            this._pushVx *= 0.85;
+            this._pushVy *= 0.85;
         }
 
         World.clampToBounds(this);
@@ -214,7 +222,7 @@ class Player {
         const pct = Math.max(0, this.health / Config.playerMaxHealth) * 100;
         const bar = document.getElementById('health-bar');
         if (bar) {
-            bar.style.width = pct + '%';
+            bar.style.height = pct + '%';
             bar.style.background = pct > 50 ? '#4caf50' : pct > 25 ? '#ffb74d' : '#ef5350';
         }
     }
