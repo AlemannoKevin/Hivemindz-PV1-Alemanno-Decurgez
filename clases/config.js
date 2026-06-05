@@ -11,7 +11,7 @@ const Config = {
     zoomSpeed:   0.1,
 
     // Humanos
-    humanCount:          500,
+    humanCount:          325,
     humanWalkSpeed:      0.9,
     humanFleeSpeed:      2.0,    // Velocidad de escape
     humanFleeRange:      180,    // Distancia de detección de zombies en px
@@ -21,7 +21,7 @@ const Config = {
 
     // Peleador
     brawlerRatio:        0.15,
-    brawlerBatRange:     100,
+    brawlerBatRange:     80,
     brawlerBatForce:     35,
     brawlerBatCooldown:  75,
     brawlerSlowDuration: 50,  
@@ -78,7 +78,7 @@ const Config = {
     playerBulletCooldown: 130,
 
     // LMB swarm
-    lmbSpeedBoost:        1.7,
+    lmbSpeedBoost:        1.6,
     lmbMaxZombies:        15,    // máximo de zombies controlables por LMB a la vez
 
     // Biomass Collapse
