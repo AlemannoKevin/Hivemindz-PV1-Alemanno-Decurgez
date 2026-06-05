@@ -18,6 +18,13 @@ class Camara {
         this.container.y = this.offsetY;
     }
 
+    ajustarZoom(delta) {
+        Config.zoom = Utils.clamp(
+            Config.zoom - delta * Config.zoomSpeed,
+            Config.zoomMin,
+            Config.zoomMax
+        );
+    }
     screenToWorld(screenX, screenY) {
         return {
             x: (screenX - this.offsetX) / Config.zoom,

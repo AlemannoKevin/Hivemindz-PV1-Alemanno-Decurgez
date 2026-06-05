@@ -66,8 +66,6 @@ class Player {
     becomeZombie(worldContainer, humans, zombies) {
         if (this.isZombie) return;
         this.isZombie = true;
-        const hud = document.getElementById('hud');
-        if (hud) hud.style.display = 'block';
         const bars = document.getElementById('cooldown-bars');
         if (bars) bars.style.display = 'flex';
         this._buildVisual();
@@ -244,5 +242,7 @@ class Player {
         const cdShot = document.getElementById('cd-shot');
         if (cdDash) cdDash.style.height = (dashPct * 100) + '%';
         if (cdShot) cdShot.style.height = (shotPct * 100) + '%';
+
+        // Barra LMB: la actualiza game.js porque depende del estado del juego
     }
 }

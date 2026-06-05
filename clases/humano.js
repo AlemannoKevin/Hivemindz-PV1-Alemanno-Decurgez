@@ -167,7 +167,20 @@ class Peleador extends Humano {
     }
 
     update(allHumans, player, allZombies, deltaTime) {
-    
+
+        this._pitSlowed  = false;
+        this._pitNoAtack = false;
+
+        if (this._stunTimer > 0) {
+            this._stunTimer  -= deltaTime;
+            this._biogolpeado = false;
+            this.container.x  = this.x;
+            this.container.y  = this.y;
+            this._actualizarBarraInfeccion();
+            return;
+        }
+        this._biogolpeado = false;
+
         for (const other of allHumans) {
             if (other === this) continue;
             const dx = this.x - other.x;
@@ -190,11 +203,13 @@ class Peleador extends Humano {
             }
         }
 
-        this.currentState.update(this, { allHumans, player, allZombies, deltaTime });
+        const pitMult = this._pitSlowed ? Config.pitSlowFactor : 1;
+        this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult });
 
         this.flipSprite();
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;
+        this._actualizarBarraInfeccion();
     }
 }

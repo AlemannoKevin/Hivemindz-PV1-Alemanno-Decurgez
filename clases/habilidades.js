@@ -1,27 +1,27 @@
 const HABILIDADES = [
     {
-        id:   'zaturn',
+        id:   'biomass',
         tipo: 'lmb',
-        nombre: 'Zaturnian Presence',
-        desc: 'Los zombies en pantalla ganan +50% velocidad y orbitan al jugador en sentido horario mientras se mantiene LMB.',
+        nombre: 'Biomass Collapse',
+        desc: 'Hasta 15 zombies cercanos forman una bola. Clickea la bola para patearla. Aturde humanos, daña enemigos y deja un rastro de veneno.',
     },
     {
         id:   'combustion',
         tipo: 'lmb',
-        nombre: 'Spontaneous Combustion',
-        desc: 'Mantené LMB cerca de un zombie para lanzarlo hacia el cursor. Al impactar explota en un radio, infectando/dañando todo lo que toca.',
+        nombre: 'Kick-Start Combustion',
+        desc: 'Patea un zombie cercano hacia la dirección del cursor. Al impactar explota en un radio, infectando/dañando todo lo que toca.',
     },
     {
         id:   'dagger',
         tipo: 'rmb',
         nombre: 'Putrified Daggers',
-        desc: 'Dispara un burst de 3 proyectiles. Mitad de cooldown. Requiere 2 impactos para infectar humanos. Hace +50% de daño a enemigos.',
+        desc: 'Dispara un burst de 3 proyectiles. Requiere 3 impactos para infectar humanos. +50% de daño a enemigos.',
     },
     {
         id:   'pit',
         tipo: 'rmb',
         nombre: 'Poisonous Pit',
-        desc: 'El proyectil deja un charco al impactar. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.',
+        desc: 'El proyectil deja un charco venenoso al impactar. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.',
     },
 ];
 
@@ -231,5 +231,189 @@ class ZombieProyectil {
             else { ring.clear(); worldContainer.removeChild(ring); }
         };
         requestAnimationFrame(animar);
+    }
+}
+
+class BiomassBall {
+    constructor(x, y, zombies, worldContainer) {
+        this.x       = x;
+        this.y       = y;
+        this._wc     = worldContainer;
+        this._vx     = 0;
+        this._vy     = 0;
+        this._muerto = false;
+        this._golpeados    = new Set();
+        this._trailTimer   = 0;
+        this._disbandTimer = -1;
+        this._enMovimiento = false; // true después del primer kick
+
+        // Visual del círculo de la bola
+        this._gfx = new PIXI.Graphics();
+        this._dibujarCirculo();
+        worldContainer.addChild(this._gfx);
+
+        // Agarramos los zombies más cercanos al punto clickeado
+        this._zombies = zombies
+            .filter(z => !z._dead)
+            .sort((a, b) =>
+                Utils.distance(a.x, a.y, x, y) -
+                Utils.distance(b.x, b.y, x, y)
+            )
+            .slice(0, Config.bioZombieCount);
+
+        for (const z of this._zombies) {
+            z._bioBall = true;
+        }
+    }
+
+    _dibujarCirculo() {
+        this._gfx.clear();
+        this._gfx.lineStyle(2, 0x69f0ae, 0.6);
+        this._gfx.beginFill(0x1b5e20, 0.25);
+        this._gfx.drawCircle(this.x, this.y, Config.bioBallRadius);
+        this._gfx.endFill();
+    }
+
+    kick(cursorX, cursorY) {
+        const dir    = Utils.normalize(cursorX - this.x, cursorY - this.y);
+        this._vx     = dir.x * Config.bioBallForce;
+        this._vy     = dir.y * Config.bioBallForce;
+        this._enMovimiento  = true;
+        this._disbandTimer  = -1;
+        this._golpeados.clear();
+    }
+
+    update(delta, allHumans, allPolicia, allZombies, worldContainer) {
+        if (this._muerto) return;
+
+        // ── Física de la bola ──────────────────────────────────────────
+        if (this._enMovimiento) {
+            this._vx *= Config.bioBallFriction;
+            this._vy *= Config.bioBallFriction;
+            this.x   += this._vx * delta;
+            this.y   += this._vy * delta;
+
+            this.x = Utils.clamp(this.x, 16, Config.worldWidth  - 16);
+            this.y = Utils.clamp(this.y, 16, Config.worldHeight - 16);
+
+            // Trail de charcos mientras se mueve
+            this._trailTimer -= delta;
+            if (this._trailTimer <= 0) {
+                this._trailTimer = Config.bioTrailInterval;
+                charcos.push(new CharcoPit(this.x, this.y, worldContainer));
+            }
+
+            // Contacto con humanos
+            for (const h of allHumans) {
+                if (h._infected || h._biogolpeado) continue;
+                if (Utils.distance(h.x, h.y, this.x, this.y) < Config.bioContactRadius) {
+                    h._biogolpeado = true;
+                    h._stunTimer   = Config.bioHumanStunDuration;
+                    const dir = Utils.normalize(h.x - this.x, h.y - this.y);
+                    h.x += dir.x * Config.bioPushForce;
+                    h.y += dir.y * Config.bioPushForce;
+                }
+            }
+
+            // Contacto con enemigos — hit único
+            for (const cop of allPolicia) {
+                if (cop._dead || this._golpeados.has(cop)) continue;
+                if (Utils.distance(cop.x, cop.y, this.x, this.y) < Config.bioContactRadius) {
+                    this._golpeados.add(cop);
+                    cop._hits -= Config.bioEnemyDamage / Config.policiaBulletDamage;
+                    if (cop._actualizarBarraVida) cop._actualizarBarraVida();
+                    if (cop._hits <= 0) cop._dead = true;
+                    const dir = Utils.normalize(cop.x - this.x, cop.y - this.y);
+                    cop.x += dir.x * Config.bioPushForce;
+                    cop.y += dir.y * Config.bioPushForce;
+                }
+            }
+
+            // Cuando frena, iniciamos el timer de disolución
+            const speed = Math.hypot(this._vx, this._vy);
+            if (speed < Config.bioBallStopSpeed) {
+                this._enMovimiento = false;
+                this._disbandTimer = Config.bioDisbandDelay;
+            }
+        }
+
+        // ── Timer de disolución ────────────────────────────────────────
+        if (!this._enMovimiento && this._disbandTimer >= 0) {
+            this._disbandTimer -= delta;
+            if (this._disbandTimer <= 0) {
+                this._disolver();
+                return;
+            }
+        }
+
+        // ── Zombies se mueven dentro de la bola con separación entre ellos ──
+        for (const z of this._zombies) {
+            if (z._dead) continue;
+
+            // Asignamos un offset fijo aleatorio la primera vez
+            if (z._bioOffsetX === undefined) {
+                const angle    = Utils.randomAngle();
+                const r        = Math.random() * Config.bioBallRadius * 0.6;
+                z._bioOffsetX  = Math.cos(angle) * r;
+                z._bioOffsetY  = Math.sin(angle) * r;
+            }
+
+            // Target: centro de la bola + offset personal
+            const targetX = this.x + z._bioOffsetX;
+            const targetY = this.y + z._bioOffsetY;
+
+            const dx   = targetX - z.x;
+            const dy   = targetY - z.y;
+            const dist = Math.hypot(dx, dy);
+
+            // Corre hacia su target
+            if (dist > 2) {
+                const spd = Config.bioZombieChaseSpeed * delta;
+                z.x += (dx / dist) * Math.min(spd, dist);
+                z.y += (dy / dist) * Math.min(spd, dist);
+            }
+
+            // Separación entre zombies de la bola
+            for (const other of this._zombies) {
+                if (other === z || other._dead) continue;
+                const ox   = z.x - other.x;
+                const oy   = z.y - other.y;
+                const od   = Math.hypot(ox, oy);
+                if (od > 0 && od < Config.boidsSepRadius * 0.8) {
+                    const push = (Config.boidsSepRadius * 0.8 - od) / (Config.boidsSepRadius * 0.8) * 1.5;
+                    z.x += (ox / od) * push;
+                    z.y += (oy / od) * push;
+                }
+            }
+
+            // Clamp: no salirse del radio de la bola
+            const fromCenter = Math.hypot(z.x - this.x, z.y - this.y);
+            if (fromCenter > Config.bioBallRadius) {
+                const angle = Utils.angleTo(this.x, this.y, z.x, z.y);
+                z.x = this.x + Math.cos(angle) * Config.bioBallRadius;
+                z.y = this.y + Math.sin(angle) * Config.bioBallRadius;
+            }
+
+            z.headingX = dx;
+            z.headingY = dy;
+            z.flipSprite   && z.flipSprite();
+            z._actualizarContorno && z._actualizarContorno(true);
+            z.container.x = z.x;
+            z.container.y = z.y;
+        }
+
+        // Actualizamos el visual del círculo
+        this._dibujarCirculo();
+    }
+
+    _disolver() {
+        this._muerto = true;
+        this._wc.removeChild(this._gfx);
+        for (const z of this._zombies) {
+            z._bioBall    = false;
+            z._bioOffsetX = undefined;
+            z._bioOffsetY = undefined;
+            z._actualizarContorno && z._actualizarContorno(false);
+        }
     }
 }

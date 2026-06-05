@@ -125,8 +125,8 @@ class HumanoFleeState {
         humano.headingX = direction.x;
         humano.headingY = direction.y;
         const pitMult = context.pitMult ?? 1;
-        humano.x += direction.x * Config.humanWalkSpeed * deltaTime * pitMult;
-        humano.y += direction.y * Config.humanWalkSpeed * deltaTime * pitMult;
+        humano.x += direction.x * Config.humanFleeSpeed * deltaTime * pitMult;
+        humano.y += direction.y * Config.humanFleeSpeed * deltaTime * pitMult;
     }
 
     exit(humano) {

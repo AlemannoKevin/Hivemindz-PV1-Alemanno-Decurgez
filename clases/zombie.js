@@ -47,9 +47,28 @@ class Zombie extends GameObject{
       this.sprite.gotoAndPlay(0);
     }
 
+    _actualizarContorno(activo) {
+        if (!this.sprite) return;
+        if (activo && !this._contornoActivo) {
+            this._contornoActivo = true;
+            this.sprite.tint = 0x88bbff; // hue azulado
+        } else if (!activo && this._contornoActivo) {
+            this._contornoActivo = false;
+            this.sprite.tint = 0xffffff; // restauramos
+        }
+    }
+
     update(allZombies, allHumans, allPolicia, deltaTime, worldContainer, lmbControlled = false, lmbX = 0, lmbY = 0) {
     
         if (this._slowTimer > 0) this._slowTimer -= deltaTime;
+
+        // En modo biomass: el movimiento lo maneja BiomassBall
+        if (this._bioBall) {
+            this._setAnimation('move', true);
+            return;
+        }
+        // Limpiamos contorno si no está siendo controlado
+        this._actualizarContorno(false);
 
         for (const other of allZombies) {
             if (other === this) continue;

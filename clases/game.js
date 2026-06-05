@@ -15,14 +15,20 @@ class Game {
         this.policia            = [];
         this.bulletsPolice      = [];
 
-        this._upgradeCount      = 0;    // cuántas veces apareció la pantalla
+        this._upgradeCount      = 0;                    // cuántas veces apareció la pantalla
         this._paused            = false;
-        this._lmbUpgrade        = null; // id de la habilidad LMB elegida
-        this._rmbUpgrade        = null; // id de la habilidad RMB elegida
-        this._daggerHits        = {};   // hits acumulados por humano para la daga
-        this._habilidadesUsadas = [];   // ids ya ofrecidos
-        this._zombieProyectil   = null; // zombie volando (combustion)
-        this._combustionCD      = 0;    // cooldown de combustion 
+        this._lmbUpgrade        = null;                 // id de la habilidad LMB elegida
+        this._rmbUpgrade        = null;                 // id de la habilidad RMB elegida
+        this._daggerHits        = {};                   // hits acumulados por humano para la daga
+        this._habilidadesUsadas = [];                   // ids ya ofrecidos
+        this._zombieProyectil   = null;                 // zombie volando (combustion)
+        this._combustionCD      = 0;                    // cooldown de combustion 
+        this._bioball          = null;                  // instancia activa de BiomassBall
+        this._bioCD            = 0;                     // cooldown post-bola
+        this._combustionClick  = false;                 // flag de click para combustion
+        this._lmbOverheat      = Config.lmbOverheatMax; // carga actual
+        this._lmbOnCooldown    = false;                 // en cooldown duro
+        this._lmbCooldownTimer = 0;
 
         setup().then(() => this.start());
     }
@@ -70,45 +76,67 @@ class Game {
         this.player._worldContainer = this.worldContainer;
 
         window.addEventListener('mousedown', e => {
-            if (e.button !== 2) {
-                // El LMB default ya no hace nada especial acá, se maneja en _tick
+            const mx = Mouse.worldX(this.camera.offsetX);
+            const my = Mouse.worldY(this.camera.offsetY);
+
+            if (e.button === 0) {
+                // LMB — solo funciona si hay un upgrade activo
+                if (!this.player.isZombie) return;
+
+                if (this._lmbUpgrade === 'biomass') {
+                    if (!this._bioball && this._bioCD <= 0) {
+                        this._bioball = new BiomassBall(
+                            mx, my,
+                            this.zombies, this.worldContainer
+                        );
+               
+                    } else if (this._bioball && !this._bioball._muerto) {
+                        this._bioball.kick(mx, my);
+                    }
+
+                } else if (this._lmbUpgrade === 'combustion') {
+                    this._combustionClick = true;
+                }
+                // Sin upgrade LMB: no hace nada
                 return;
             }
+
+            if (e.button !== 2) return;
+
+            // RMB
             if (!this.player.isZombie) {
                 this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
-            } else {
+                return;
+            }
+
+            if (this.player._bulletCooldown <= 0) {
+                this.player.attack();
                 const cooldown = this._rmbUpgrade === 'dagger'
                     ? Config.daggerCooldown
                     : Config.playerBulletCooldown;
-                if (this.player._bulletCooldown <= 0) {
-                    this.player.attack();
-                    this.player._bulletCooldown = cooldown;
-                    const angle = Utils.angleTo(
-                        this.player.x, this.player.y,
-                        Mouse.worldX(this.camera.offsetX),
-                        Mouse.worldY(this.camera.offsetY)
-                    );
-                    if (this._rmbUpgrade === 'dagger') {
-                        // Burst de 3 proyectiles con spread
-                        const angulos = [
-                            angle - Config.daggerSpreadAngle,
-                            angle,
-                            angle + Config.daggerSpreadAngle,
-                        ];
-                        for (const a of angulos) {
-                            this.bullets.push(
-                                new BalaDagger(this.player.x, this.player.y, a, this.worldContainer, this._daggerHits)
-                            );
-                        }
-                    } else if (this._rmbUpgrade === 'pit') {
+                this.player._bulletCooldown = cooldown;
+                const angle = Utils.angleTo(
+                    this.player.x, this.player.y, mx, my
+                );
+                if (this._rmbUpgrade === 'dagger') {
+                    const angulos = [
+                        angle - Config.daggerSpreadAngle,
+                        angle,
+                        angle + Config.daggerSpreadAngle,
+                    ];
+                    for (const a of angulos) {
                         this.bullets.push(
-                            new BalaPit(this.player.x, this.player.y, angle, this.worldContainer)
-                        );
-                    } else {
-                        this.bullets.push(
-                            new Bala(this.player.x, this.player.y, angle, this.worldContainer)
+                            new BalaDagger(this.player.x, this.player.y, a, this.worldContainer, this._daggerHits)
                         );
                     }
+                } else if (this._rmbUpgrade === 'pit') {
+                    this.bullets.push(
+                        new BalaPit(this.player.x, this.player.y, angle, this.worldContainer)
+                    );
+                } else {
+                    this.bullets.push(
+                        new Bala(this.player.x, this.player.y, angle, this.worldContainer)
+                    );
                 }
             }
         });
@@ -164,6 +192,10 @@ class Game {
         window.addEventListener('resize', () => {
             this.app.renderer.resize(window.innerWidth, window.innerHeight);
         });
+
+        window.addEventListener('wheel', e => {
+            this.camera.ajustarZoom(e.deltaY > 0 ? 1 : -1);
+        });
     }
 
     _tick(delta) {
@@ -184,9 +216,68 @@ class Game {
             human.update(this.humans, this.player, this.zombies, delta);
         }
 
-        const lmbActive  = Mouse.leftHeld && this.player.isZombie;
+        // Overheat del LMB básico
         const lmbTargetX = Mouse.worldX(this.camera.offsetX);
         const lmbTargetY = Mouse.worldY(this.camera.offsetY);
+        let lmbActive = false;
+
+        // Actualizamos barra LMB en el HUD
+        const cdLmb = document.getElementById('cd-lmb');
+        if (cdLmb) {
+            if (!this._lmbUpgrade) {
+                // Básico: muestra el overheat
+                if (this._lmbOnCooldown) {
+                    const pct = 1 - (this._lmbCooldownTimer / Config.lmbOverheatCooldown);
+                    cdLmb.style.height     = (pct * 100) + '%';
+                    cdLmb.style.background = '#ef5350'; // rojo cuando está en cooldown
+                } else {
+                    const pct = this._lmbOverheat / Config.lmbOverheatMax;
+                    cdLmb.style.height     = (pct * 100) + '%';
+                    cdLmb.style.background = pct > 0.3 ? '#69f0ae' : '#ffb74d';
+                }
+            } else if (this._lmbUpgrade === 'biomass') {
+                // Biomass: muestra cooldown de la bola
+                const pct = this._bioCD > 0
+                    ? 1 - (this._bioCD / Config.bioCooldown)
+                    : 1;
+                cdLmb.style.height     = (pct * 100) + '%';
+                cdLmb.style.background = '#69f0ae';
+            } else if (this._lmbUpgrade === 'combustion') {
+                // Combustion: muestra cooldown
+                const pct = this._combustionCD > 0
+                    ? 1 - (this._combustionCD / Config.combustionCooldown)
+                    : 1;
+                cdLmb.style.height     = (pct * 100) + '%';
+                cdLmb.style.background = '#ff7043';
+            }
+        }
+
+        if (!this._lmbUpgrade && this.player.isZombie) {
+            if (this._lmbOnCooldown) {
+                // En cooldown duro: recargamos el timer
+                this._lmbCooldownTimer -= delta;
+                if (this._lmbCooldownTimer <= 0) {
+                    this._lmbOnCooldown = false;
+                    this._lmbOverheat   = Config.lmbOverheatMax;
+                }
+            } else if (Mouse.leftHeld && this._lmbOverheat > 0) {
+                // Usando el LMB: consumimos la barra
+                lmbActive = true;
+                this._lmbOverheat -= delta;
+                if (this._lmbOverheat <= 0) {
+                    this._lmbOverheat      = 0;
+                    this._lmbOnCooldown    = true;
+                    this._lmbCooldownTimer = Config.lmbOverheatCooldown;
+                    lmbActive = false;
+                }
+            } else if (!Mouse.leftHeld && this._lmbOverheat < Config.lmbOverheatMax) {
+                // Recargamos a ritmo más lento
+                this._lmbOverheat = Math.min(
+                    Config.lmbOverheatMax,
+                    this._lmbOverheat + delta * Config.lmbRechargeRate
+                );
+            }
+        }
 
         for (const zombie of this.zombies) {
             const controlled = lmbActive && this._isOnScreen(zombie);
@@ -227,8 +318,9 @@ class Game {
         }
 
         for (let i = this.zombies.length - 1; i >= 0; i--) {
-            if (this.zombies[i]._dead) {
-                this.worldContainer.removeChild(this.zombies[i].container);
+            const z = this.zombies[i];
+            if (z._dead && !z._bioBall) {
+                this.worldContainer.removeChild(z.container);
                 this.zombies.splice(i, 1);
             }
         }
@@ -248,20 +340,22 @@ class Game {
             }
         }
 
-        // LMB: zaturn (rota los targets solo mientras se mantiene apretado)
-        if (this._lmbUpgrade === 'zaturn' && Mouse.leftHeld && this.player.isZombie) {
-            this._updateOrbit(delta);
-        } else if (this._lmbUpgrade === 'zaturn') {
-            // Sin LMB apretado, los zombies vuelven a su AI normal
-            for (const z of this.zombies) {
-                z._orbitTargetX = undefined;
-                z._orbitTargetY = undefined;
-            }
-        }
-
-        // LMB: combustion (solo al hacer click, manejado en _tickCombustion)
+        // LMB: combustion
         if (this._lmbUpgrade === 'combustion') {
             this._tickCombustion(delta);
+        }
+
+        // LMB: biomass
+        if (this._lmbUpgrade === 'biomass') {
+            if (this._bioball && !this._bioball._muerto) {
+                this._bioball.update(
+                    delta, this.humans, this.policia, this.zombies, this.worldContainer
+                );
+            } else if (this._bioball && this._bioball._muerto) {
+                if (this._bioCD <= 0) this._bioCD = Config.bioCooldown;
+                this._bioball = null;
+            }
+            if (this._bioCD > 0) this._bioCD -= delta;
         }
 
         // Actualizar charcos de veneno
@@ -292,12 +386,18 @@ class Game {
         if (!hab) return;
 
         if (hab.tipo === 'lmb') {
-            this._lmbUpgrade = id;
-            if (id === 'zaturn') {
-                for (const z of this.zombies) {
-                    z._orbitAngle = Utils.angleTo(this.player.x, this.player.y, z.x, z.y);
-                }
+            // Limpiamos estado de cualquier LMB anterior
+            for (const z of this.zombies) {
+                z._orbitTargetX = undefined;
+                z._orbitTargetY = undefined;
+                z._bioBall      = false;
+                z._actualizarContorno && z._actualizarContorno(false);
             }
+            if (this._bioball) {
+                this._bioball._disolver();
+                this._bioball = null;
+            }
+            this._lmbUpgrade = id;
         } else {
             this._rmbUpgrade = id;
             const cdShot = document.getElementById('cd-shot');
@@ -375,12 +475,12 @@ class Game {
     _tickCombustion(delta) {
         if (this._combustionCD > 0) this._combustionCD -= delta;
 
-        // Solo dispara al hacer click (mousedown detectado via Mouse.leftHeld como flanco)
-        if (!Mouse.leftHeld || !this.player.isZombie) return;
+        if (!this._combustionClick) return;
+        this._combustionClick = false;
+
         if (this._combustionCD > 0) return;
         if (this._zombieProyectil && !this._zombieProyectil._muerto) return;
 
-        // Buscamos el zombie más cercano al jugador dentro del radio
         let masCorto = null, distMin = Config.combustionPickRange;
         for (const z of this.zombies) {
             if (z._dead) continue;
@@ -390,11 +490,9 @@ class Game {
         if (!masCorto) return;
 
         this._combustionCD = Config.combustionCooldown;
-
         const mx  = Mouse.worldX(this.camera.offsetX);
         const my  = Mouse.worldY(this.camera.offsetY);
         const dir = Utils.normalize(mx - this.player.x, my - this.player.y);
-
         this._zombieProyectil = new ZombieProyectil(masCorto, dir.x, dir.y, this.worldContainer);
     }
 };
