@@ -434,9 +434,12 @@ class PeleadorAttackState {
                 const angle     = Utils.angleTo(peleador.x, peleador.y, zombie.x, zombie.y);
                 const closeness = 1 - (dist / Config.brawlerBatRange);
                 const force     = Config.brawlerBatForce * (0.5 + closeness * 0.5);
-                zombie._pushVx  = Math.cos(angle) * force;
-                zombie._pushVy  = Math.sin(angle) * force;
-                zombie._slowTimer = Config.brawlerSlowDuration;
+                const knockMult = (zombie._ctBoostTimer > 0) ? Config.comeTogetherDmgReduction : 1;
+                zombie._pushVx  = Math.cos(angle) * force * knockMult;
+                zombie._pushVy  = Math.sin(angle) * force * knockMult;
+                if (!zombie._ctBoostTimer || zombie._ctBoostTimer <= 0) {
+                    zombie._slowTimer = Config.brawlerSlowDuration;
+                }
             }
         }
 

@@ -98,10 +98,17 @@ class BalaPolicia extends GameObject {
             const dist = Utils.distance(this.x, this.y, zombie.x, zombie.y);
             if (dist < 16) {
                 const speed = Math.hypot(this.vx, this.vy);
-                zombie.x += (this.vx / speed) * (this._knockback ?? Config.policiaKnockback);
-                zombie.y += (this.vy / speed) * (this._knockback ?? Config.policiaKnockback);
-                World.clampToBounds(zombie);
-                zombie._hp = (zombie._hp ?? 1) - (this._damage ?? Config.policiaBulletDamage);
+
+                // Sin knockback si tiene boost de come together
+                if (!zombie._ctBoostTimer || zombie._ctBoostTimer <= 0) {
+                    zombie.x += (this.vx / speed) * (this._knockback ?? Config.policiaKnockback);
+                    zombie.y += (this.vy / speed) * (this._knockback ?? Config.policiaKnockback);
+                    World.clampToBounds(zombie);
+                }
+
+                // Reducción de daño si tiene boost
+                const dmgMult = (zombie._ctBoostTimer > 0) ? Config.comeTogetherDmgReduction : 1;
+                zombie._hp = (zombie._hp ?? 1) - (this._damage ?? Config.policiaBulletDamage) * dmgMult;
 
                 if (zombie.sprite) {
                     zombie.sprite.tint = 0xff4444;

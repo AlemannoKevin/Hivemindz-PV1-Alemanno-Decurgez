@@ -4,7 +4,7 @@ const HABILIDADES = [
         id:   'cometogether',
         tipo: 'lmb',
         nombre: 'Come Together',
-        desc: 'Zombies te rodean por unos segundos, antes de explotar y desparramarlos por la zona. Eres invulnerable durante la habilidad.',
+        desc: 'Zombies te rodean por unos segundos, antes de explotar y desparramarlos por la zona con buffs. Eres invulnerable durante la habilidad.',
     },
     {
         id:   'punch',
@@ -446,7 +446,6 @@ class ComeTogether {
         this._player._comeTogether = false;
         if (this._player.sprite) this._player.sprite.tint = 0xffffff;
 
-        // Empujamos los zombies que llegaron al radio
         for (const z of this._zombies) {
             z._comeTogether = false;
             z._actualizarContorno && z._actualizarContorno(false);
@@ -456,6 +455,9 @@ class ComeTogether {
                 const force = Config.comeTogetherForce;
                 z._pushVx = Math.cos(angle) * force;
                 z._pushVy = Math.sin(angle) * force;
+                // Boost temporal post-explosión
+                z._ctBoostTimer = Config.comeTogetherBoostDuration;
+                if (z.sprite) z.sprite.tint = 0xff4444;
             }
         }
 

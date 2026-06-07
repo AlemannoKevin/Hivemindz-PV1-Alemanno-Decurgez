@@ -93,7 +93,7 @@ const Config = {
     bioDetectBoost:       2.0,   // multiplicador del zombieSeekRange del central
     bioCentralSpeedBoost: 1.8,   // multiplicador de velocidad del zombie central
 
-    // Upgrade: RMB dagger
+    // Dagger
     daggerCooldown:       75,   
     daggerHitsToInfect:   3,     
     daggerPoliceDamage:   0.375,
@@ -121,6 +121,9 @@ const Config = {
     comeTogetherForce:       115,    // fuerza de la explosión final
     comeTogetherZombies:     30,    // máximo zombies convocados
     comeTogetherSpeed:       2.4,   // multiplicador de velocidad hacia el jugador
+    comeTogetherBoostDuration: 200,  // frames del boost (2.5s)
+    comeTogetherSpeedBoost:    2.25,  // multiplicador de velocidad
+    comeTogetherDmgReduction:  0.5,  // multiplicador de daño recibido
 
     // Born Under Punches
     punchCooldown:           100,

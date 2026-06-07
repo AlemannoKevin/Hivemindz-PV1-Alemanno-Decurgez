@@ -164,7 +164,16 @@ class Zombie extends GameObject{
 
         const orbitBoost   = (Game.instance?._lmbUpgrade === 'orbit') ? Config.orbitSpeedBoost : 1;
         const centralBoost = this._bioCentral ? Config.bioCentralSpeedBoost : 1;
-        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost * orbitBoost * centralBoost;
+     
+        if (this._ctBoostTimer > 0) {
+            this._ctBoostTimer -= deltaTime;
+            if (this._ctBoostTimer <= 0 && this.sprite) {
+                this.sprite.tint = 0xffffff;
+            }
+        }
+        
+        const ctBoost = (this._ctBoostTimer > 0) ? Config.comeTogetherSpeedBoost : 1;
+        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost * orbitBoost * centralBoost * ctBoost;
         this.x += direction.x * Config.zombieSpeed * speedMultiplier * deltaTime;
         this.y += direction.y * Config.zombieSpeed * speedMultiplier * deltaTime;
 
