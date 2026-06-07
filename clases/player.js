@@ -157,6 +157,9 @@ class Player {
     }
 
     handleMovement(deltaTime) {
+        // Bloqueamos movimiento durante Come Together
+        if (this._comeTogether) return;
+
         let moveX = 0, moveY = 0;
 
         if (Input.isHeld('w') || Input.isHeld('arrowup'))    moveY -= 1;
@@ -204,6 +207,7 @@ class Player {
 
     takeDamage() {
         if (!this.isZombie) return;
+        if (this._comeTogether) return; // invulnerable durante Come Together
         this.health -= 1;
 
         if (this.sprite) {

@@ -25,12 +25,14 @@ const Config = {
     brawlerBatForce:     35,
     brawlerBatCooldown:  75,
     brawlerSlowDuration: 50,  
-    brawlerSlowFactor:   0.5,  
+    brawlerSlowFactor:   0.5,
+    brawlerInfectHits:   2,    // golpes necesarios para infectar a un brawler  
 
     // Boids
-    boidsSepRadius:   50,     // Separación
-    boidsAliRadius:   100,    // Alineación
-    boidsCohRadius:   120,    // Cohesión
+    boidsSepRadius:    50,     // Separación
+    boidsAliRadius:    100,    // Alineación
+    boidsCohRadius:    120,    // Cohesión
+    boidsMaxNeighbors: 25,     // máximo de vecinos por entidad en boids
 
     // Player
     playerMaxHealth:     10,
@@ -82,28 +84,23 @@ const Config = {
     lmbMaxZombies:        15,    // máximo de zombies controlables por LMB a la vez
 
     // Biomass Collapse
-    bioBallRadius:        45,    // radio del círculo de la bola
-    bioZombieChaseSpeed:  12,    // velocidad a la que los zombies siguen el centro
-    bioBallForce:         30,    // fuerza inicial del kick
-    bioBallFriction:      0.74,  // fricción por frame
-    bioBallStopSpeed:     0.4,   // velocidad mínima antes de disolver
-    bioDisbandDelay:      30,    // frames antes de disolver (0.5s)
-    bioCooldown:          300,   // frames de cooldown (5 segundos)
-    bioTrailInterval:     20,    // frames entre charcos del trail
-    bioHumanStunDuration: 60,    // frames de stun en humanos
-    bioPushForce:         36,    // fuerza de empuje al contacto
-    bioEnemyDamage:       0.5,   // daño a enemigos
-    bioContactRadius:     50,    // radio de contacto
-    bioZombieCount:       15,    // zombies que forman la bola
+    bioBallRadius:        70,    // radio de agrupamiento alrededor del zombie central
+    bioZombieChaseSpeed:  4,     // velocidad de gather (constante)
+    bioCooldown:          600,   // frames de cooldown (10s)
+    bioDuration:          450,   // frames activos (7.5s)
+    bioZombieCount:       24,    // zombies adicionales al central
+    bioPushResist:        0.25,  // reducción de push recibido (75% menos)
+    bioDetectBoost:       2.0,   // multiplicador del zombieSeekRange del central
+    bioCentralSpeedBoost: 1.8,   // multiplicador de velocidad del zombie central
 
     // Upgrade: RMB dagger
-    daggerCooldown:       110,   
+    daggerCooldown:       75,   
     daggerHitsToInfect:   3,     
     daggerPoliceDamage:   0.375,
     daggerSpreadAngle:    0.125,  // ángulo entre proyectiles del burst
     
     // Spontaneous Combustion
-    combustionRadius:     75,    // radio de la explosión en px
+    combustionRadius:     85,    // radio de la explosión en px
     combustionPushDist:   250,   // distancia máxima del empuje
     combustionPushSpeed:  6,    // velocidad del zombie empujado
     combustionCooldown:   300,   // frames de cooldown
@@ -117,4 +114,29 @@ const Config = {
     pitSlowFactor:        0.25,   // multiplicador de velocidad sobre el charco
     pitHumanInfectRate:   0.5,   // infección por pulso (4 pulsos = 2 hits de daga = 1 infección)
     pitEnemyDamage:       0.125,// daño a enemigos por pulso (1/4 de una bala básica: 0.25/4)
+    
+    // Come Together
+    comeTogetherRadius:      55,    // radio de agrupamiento alrededor del jugador
+    comeTogetherDuration:    190,   // frames de gather
+    comeTogetherForce:       115,    // fuerza de la explosión final
+    comeTogetherZombies:     30,    // máximo zombies convocados
+    comeTogetherSpeed:       2.4,   // multiplicador de velocidad hacia el jugador
+
+    // Born Under Punches
+    punchCooldown:           100,
+    punchWidth:              80,   // ancho del cuadrado (eje perpendicular)
+    punchHeight:             100,  // alto del cuadrado (eje de ataque)
+    punchDamage:             0.5,
+    punchKnockback:          20,
+    punchRange:              100,
+    punchAngle:              1.2,  // apertura del abanico
+
+    // Waves Mode
+    waveDuration:            3600,  // frames por wave (1 minuto a 60fps)
+    waveEnemyBase:           12,    // enemigos iniciales (igual que policiaCount)
+    waveEnemyGrowth:         0.025, // crecimiento por wave (2.5%)
+    waveTotalWaves:          9,     // waves para ganar
+    waveHumanTarget:         250,   // humanos a mantener en el mapa
+    waveUpgradeEvery:        10800, // frames entre upgrades (3 min)
+    waveSwatRatio:           0.25,  // ratio de swats en waves
 };

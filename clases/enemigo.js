@@ -110,6 +110,14 @@ class Policia extends GameObject {
         this._pitNoAtack = false;
         if (this._iFrames > 0) this._iFrames -= deltaTime;
         this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
+        if (this._pushVx || this._pushVy) {
+            this.x += this._pushVx * deltaTime;
+            this.y += this._pushVy * deltaTime;
+            this._pushVx *= 0.85;
+            this._pushVy *= 0.85;
+            if (Math.abs(this._pushVx) < 0.05) this._pushVx = 0;
+            if (Math.abs(this._pushVy) < 0.05) this._pushVy = 0;
+        }
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;
@@ -150,10 +158,16 @@ class Swat extends Policia {
         this._pitSlowed  = false;
         this._pitNoAtack = false;
         if (this._iFrames > 0) this._iFrames -= deltaTime;
-
         this._lastContext = { allZombies, allHumans, player, balas, worldContainer, deltaTime };
         this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
-
+        if (this._pushVx || this._pushVy) {
+            this.x += this._pushVx * deltaTime;
+            this.y += this._pushVy * deltaTime;
+            this._pushVx *= 0.85;
+            this._pushVy *= 0.85;
+            if (Math.abs(this._pushVx) < 0.05) this._pushVx = 0;
+            if (Math.abs(this._pushVy) < 0.05) this._pushVy = 0;
+        }
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;

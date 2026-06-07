@@ -103,6 +103,15 @@ class Humano extends GameObject {
         this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult });
 
         this.flipSprite();
+
+        if (this._pushVx || this._pushVy) {
+            this.x += this._pushVx * deltaTime;
+            this.y += this._pushVy * deltaTime;
+            this._pushVx *= 0.85;
+            this._pushVy *= 0.85;
+            if (Math.abs(this._pushVx) < 0.05) this._pushVx = 0;
+            if (Math.abs(this._pushVy) < 0.05) this._pushVy = 0;
+        }
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;
@@ -118,7 +127,11 @@ class Humano extends GameObject {
         }
         if (!this._barraInfeccion) this._crearBarraInfeccion();
         this._barraInfeccion.visible = true;
-        const pct = Math.min(1, this._infeccionAcum / Config.daggerHitsToInfect);
+        // El umbral depende de si es brawler o humano normal
+        const umbral = (this instanceof Peleador)
+            ? Config.brawlerInfectHits
+            : Config.daggerHitsToInfect;
+        const pct = Math.min(1, this._infeccionAcum / umbral);
         this._barraFill.width = 28 * pct;
     }
 
@@ -194,19 +207,33 @@ class Peleador extends Humano {
         }
 
         if (!(this.currentState instanceof PeleadorAttackState)) {
+            let debeAtacar = false;
             for (const zombie of allZombies) {
-                const d = Utils.distance(this.x, this.y, zombie.x, zombie.y);
-                if (d < Config.brawlerBatRange) {
-                    this.setState(new PeleadorAttackState());
-                    break;
+                if (Utils.distance(this.x, this.y, zombie.x, zombie.y) < Config.brawlerBatRange) {
+                    debeAtacar = true; break;
                 }
             }
+            // También ataca al jugador si está en modo zombie
+            if (!debeAtacar && player.isZombie &&
+                Utils.distance(this.x, this.y, player.x, player.y) < Config.brawlerBatRange) {
+                debeAtacar = true;
+            }
+            if (debeAtacar) this.setState(new PeleadorAttackState());
         }
 
         const pitMult = this._pitSlowed ? Config.pitSlowFactor : 1;
         this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult });
 
         this.flipSprite();
+
+        if (this._pushVx || this._pushVy) {
+            this.x += this._pushVx * deltaTime;
+            this.y += this._pushVy * deltaTime;
+            this._pushVx *= 0.85;
+            this._pushVy *= 0.85;
+            if (Math.abs(this._pushVx) < 0.05) this._pushVx = 0;
+            if (Math.abs(this._pushVy) < 0.05) this._pushVy = 0;
+        }
         World.clampToBounds(this);
         this.container.x = this.x;
         this.container.y = this.y;

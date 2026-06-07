@@ -33,7 +33,16 @@ class Bala extends GameObject {
             if (human._infected) continue;
             const dist = Utils.distance(this.x, this.y, human.x, human.y);
             if (dist < 20) {
-                human.startInfection(worldContainer, zombies);
+                if (human instanceof Peleador) {
+                    human._infeccionAcum = (human._infeccionAcum || 0) + 1;
+                    if (human._actualizarBarraInfeccion) human._actualizarBarraInfeccion();
+                    if (human._infeccionAcum >= Config.brawlerInfectHits) {
+                        human._infeccionAcum = 0;
+                        human.startInfection(worldContainer, zombies);
+                    }
+                } else {
+                    human.startInfection(worldContainer, zombies);
+                }
                 this.dead = true;
                 return;
             }
@@ -160,13 +169,17 @@ class BalaDagger extends GameObject {
             if (human._infected) continue;
             const dist = Utils.distance(this.x, this.y, human.x, human.y);
             if (dist < 20) {
+                // Brawlers necesitan el doble de hits de daga
+                const hitsNecesarios = (human instanceof Peleador)
+                    ? Config.daggerHitsToInfect * Config.brawlerInfectHits
+                    : Config.daggerHitsToInfect;
                 if (human._uid === undefined) human._uid = Math.random();
                 this._hitsMap[human._uid] = (this._hitsMap[human._uid] || 0) + 1;
-                // Sincronizamos _infeccionAcum con el mapa de hits para la barra
-                human._infeccionAcum = this._hitsMap[human._uid];
+                human._infeccionAcum = this._hitsMap[human._uid] / hitsNecesarios * Config.daggerHitsToInfect;
                 if (human._actualizarBarraInfeccion) human._actualizarBarraInfeccion();
-                if (this._hitsMap[human._uid] >= Config.daggerHitsToInfect) {
+                if (this._hitsMap[human._uid] >= hitsNecesarios) {
                     delete this._hitsMap[human._uid];
+                    human._infeccionAcum = 0;
                     human.startInfection(worldContainer, zombies);
                 }
                 this.dead = true;
@@ -228,14 +241,26 @@ class BalaPit extends GameObject {
             for (const human of allHumans) {
                 if (human._infected) continue;
                 if (Utils.distance(this.x, this.y, human.x, human.y) < 20) {
-                    // Infecta como bala normal (la infección la maneja el charco)
                     impacto = true; break;
                 }
             }
         }
 
+        // Impacta enemigos como bala normal y deja charco
+        if (!impacto) {
+            for (const cop of (Game.instance?.policia || [])) {
+                if (cop._dead) continue;
+                if (Utils.distance(this.x, this.y, cop.x, cop.y) < 20) {
+                    cop._hits -= Config.policiaBulletDamage / Config.policiaBulletDamage; // 1 hit
+                    if (cop._actualizarBarraVida) cop._actualizarBarraVida();
+                    if (cop._hits <= 0) cop._dead = true;
+                    impacto = true;
+                    break;
+                }
+            }
+        }
+
         if (impacto) {
-            // Dejamos el charco donde cayó la bala
             charcos.push(new CharcoPit(this.x, this.y, worldContainer));
             this.dead = true;
         }

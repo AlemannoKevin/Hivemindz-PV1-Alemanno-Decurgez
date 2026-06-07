@@ -25,6 +25,13 @@ class Game {
         this._combustionCD      = 0;                    // cooldown de combustion 
         this._bioball          = null;                  // instancia activa de BiomassBall
         this._bioCD            = 0;                     // cooldown post-bola
+        this._comeTogether     = null;  // instancia activa de ComeTogether
+        this._comeTogetherCD   = 0;
+        this._waveMode         = false;
+        this._waveNumber       = 0;
+        this._waveTimer        = 0;
+        this._waveUpgradeTimer = 0;
+        this._gameMode         = null;  // 'normal' o 'waves'
         this._combustionClick  = false;                 // flag de click para combustion
         this._lmbOverheat      = Config.lmbOverheatMax; // carga actual
         this._lmbOnCooldown    = false;                 // en cooldown duro
@@ -89,13 +96,18 @@ class Game {
                             mx, my,
                             this.zombies, this.worldContainer
                         );
-               
-                    } else if (this._bioball && !this._bioball._muerto) {
-                        this._bioball.kick(mx, my);
+                        // El cooldown empieza al crear la bola
+                        this._bioCD = Config.bioCooldown;
                     }
 
                 } else if (this._lmbUpgrade === 'combustion') {
                     this._combustionClick = true;
+                } else if (this._lmbUpgrade === 'cometogether') {
+                    if (!this._comeTogether && this._comeTogetherCD <= 0) {
+                        this._comeTogether = new ComeTogether(
+                            this.player, this.zombies, this.worldContainer
+                        );
+                    }
                 }
                 // Sin upgrade LMB: no hace nada
                 return;
@@ -109,16 +121,15 @@ class Game {
                 return;
             }
 
-            if (this.player._bulletCooldown <= 0) {
+            if (this.player._bulletCooldown <= 0 && !this.player._comeTogether) {
                 this.player.attack();
-                const cooldown = this._rmbUpgrade === 'dagger'
-                    ? Config.daggerCooldown
-                    : Config.playerBulletCooldown;
-                this.player._bulletCooldown = cooldown;
-                const angle = Utils.angleTo(
-                    this.player.x, this.player.y, mx, my
-                );
-                if (this._rmbUpgrade === 'dagger') {
+                const angle = Utils.angleTo(this.player.x, this.player.y, mx, my);
+
+                if (this._rmbUpgrade === 'punch') {
+                    this.player._bulletCooldown = Config.punchCooldown;
+                    this._aplicarPunch(mx, my);
+                } else if (this._rmbUpgrade === 'dagger') {
+                    this.player._bulletCooldown = Config.daggerCooldown;
                     const angulos = [
                         angle - Config.daggerSpreadAngle,
                         angle,
@@ -130,10 +141,12 @@ class Game {
                         );
                     }
                 } else if (this._rmbUpgrade === 'pit') {
+                    this.player._bulletCooldown = Config.playerBulletCooldown;
                     this.bullets.push(
                         new BalaPit(this.player.x, this.player.y, angle, this.worldContainer)
                     );
                 } else {
+                    this.player._bulletCooldown = Config.playerBulletCooldown;
                     this.bullets.push(
                         new Bala(this.player.x, this.player.y, angle, this.worldContainer)
                     );
@@ -199,8 +212,8 @@ class Game {
     }
 
     _tick(delta) {
-
         if (this._paused) return;
+        if (!this._gameMode) return; // esperamos a que el jugador elija modo
 
         this.player.update(delta);
 
@@ -242,13 +255,20 @@ class Game {
                     : 1;
                 cdLmb.style.height     = (pct * 100) + '%';
                 cdLmb.style.background = '#69f0ae';
+       
             } else if (this._lmbUpgrade === 'combustion') {
-                // Combustion: muestra cooldown
                 const pct = this._combustionCD > 0
                     ? 1 - (this._combustionCD / Config.combustionCooldown)
                     : 1;
                 cdLmb.style.height     = (pct * 100) + '%';
                 cdLmb.style.background = '#ff7043';
+            } else if (this._lmbUpgrade === 'cometogether') {
+                const cdMax = Config.comeTogetherDuration * 2;
+                const pct   = this._comeTogetherCD > 0
+                    ? 1 - (this._comeTogetherCD / cdMax)
+                    : 1;
+                cdLmb.style.height     = (pct * 100) + '%';
+                cdLmb.style.background = '#69f0ae';
             }
         }
 
@@ -326,17 +346,25 @@ class Game {
         }
 
         this.camera.followTarget(this.player.x, this.player.y);
-        const aliveHumans = this.humans.filter(h => !h._infected).length;
-        const counter = document.getElementById('human-counter');
-        if (counter) counter.textContent = `HUMANS: ${aliveHumans}`;
 
-        // Mostramos upgrade cada 25% de infectados
-        if (this.player.isZombie) {
-            const infectedCount = this.humans.filter(h => h._infected).length;
-            const threshold = Math.floor(Config.humanCount * 0.25) * (this._upgradeCount + 1);
-            if (infectedCount >= threshold && !this._paused && this._upgradeCount < 4) {
-                this._upgradeCount++;
-                this._mostrarUpgrade();
+        if (!this._waveMode) {
+            const aliveHumans = this.humans.filter(h => !h._infected).length;
+            const counter = document.getElementById('human-counter');
+            if (counter) counter.textContent = `HUMANS: ${aliveHumans}`;
+
+            // Upgrades en modo normal: cuando quedan 300, 200 y 100 humanos
+            if (this.player.isZombie && !this._paused) {
+                const thresholds = [300, 200, 100];
+                const idx = this._upgradeCount;
+                if (idx < thresholds.length && aliveHumans <= thresholds[idx]) {
+                    this._upgradeCount++;
+                    this._mostrarUpgrade();
+                }
+            }
+
+            // Victoria en modo normal: todos infectados
+            if (this.player.isZombie && this.humans.every(h => h._infected)) {
+                this._mostrarVictoria();
             }
         }
 
@@ -345,6 +373,20 @@ class Game {
             this._tickCombustion(delta);
         }
 
+        // LMB: come together
+        if (this._lmbUpgrade === 'cometogether') {
+            if (this._comeTogether && !this._comeTogether._muerto) {
+                this._comeTogether.update(delta, this.humans, this.policia);
+            } else if (this._comeTogether && this._comeTogether._muerto) {
+                this._comeTogetherCD = Config.comeTogetherDuration * 2;
+                this._comeTogether   = null;
+            }
+            if (this._comeTogetherCD > 0) this._comeTogetherCD -= delta;
+        }
+
+        // Waves mode tick
+        if (this._waveMode) this._tickWaves(delta);
+
         // LMB: biomass
         if (this._lmbUpgrade === 'biomass') {
             if (this._bioball && !this._bioball._muerto) {
@@ -352,7 +394,6 @@ class Game {
                     delta, this.humans, this.policia, this.zombies, this.worldContainer
                 );
             } else if (this._bioball && this._bioball._muerto) {
-                if (this._bioCD <= 0) this._bioCD = Config.bioCooldown;
                 this._bioball = null;
             }
             if (this._bioCD > 0) this._bioCD -= delta;
@@ -388,14 +429,21 @@ class Game {
         if (hab.tipo === 'lmb') {
             // Limpiamos estado de cualquier LMB anterior
             for (const z of this.zombies) {
-                z._orbitTargetX = undefined;
-                z._orbitTargetY = undefined;
-                z._bioBall      = false;
+                z._orbitTargetX  = undefined;
+                z._orbitTargetY  = undefined;
+                z._bioBall       = false;
+                z._comeTogether  = false;
                 z._actualizarContorno && z._actualizarContorno(false);
             }
             if (this._bioball) {
                 this._bioball._disolver();
                 this._bioball = null;
+            }
+            if (this._comeTogether) {
+                this._comeTogether._muerto = true;
+                this.player._comeTogether  = false;
+                if (this.player.sprite) this.player.sprite.tint = 0xffffff;
+                this._comeTogether = null;
             }
             this._lmbUpgrade = id;
         } else {
@@ -494,5 +542,77 @@ class Game {
         const my  = Mouse.worldY(this.camera.offsetY);
         const dir = Utils.normalize(mx - this.player.x, my - this.player.y);
         this._zombieProyectil = new ZombieProyectil(masCorto, dir.x, dir.y, this.worldContainer);
+    }
+    
+    _aplicarPunch(cursorX, cursorY) {
+        aplicarPunch(
+            this.player, this.humans, this.policia,
+            this.zombies, this.worldContainer,
+            cursorX, cursorY
+        );
+    }
+
+    _tickWaves(delta) {
+        this._waveTimer        -= delta;
+        this._waveUpgradeTimer -= delta;
+
+        const counter = document.getElementById('human-counter');
+
+        // Timer de upgrade cada 3 minutos
+        if (this._waveUpgradeTimer <= 0 && !this._paused && this.player.isZombie) {
+            this._waveUpgradeTimer = Config.waveUpgradeEvery;
+            this._mostrarUpgrade();
+        }
+
+        // Nueva wave cada minuto
+        if (this._waveTimer <= 0) {
+            this._waveNumber++;
+            this._waveTimer = Config.waveDuration;
+
+            if (this._waveNumber > Config.waveTotalWaves) {
+                this._mostrarVictoria();
+                return;
+            }
+
+            // Spawneamos enemigos con crecimiento
+            const cantidad = Math.floor(
+                Config.waveEnemyBase * (1 + Config.waveEnemyGrowth * (this._waveNumber - 1))
+            );
+            for (let i = 0; i < cantidad; i++) {
+                const px = Utils.randomBetween(80, Config.worldWidth - 80);
+                const py = Utils.randomBetween(80, Config.worldHeight - 80);
+                const esSwat = Math.random() < Config.waveSwatRatio;
+                this.policia.push(
+                    esSwat
+                        ? new Swat(px, py, this.worldContainer)
+                        : new Policia(px, py, this.worldContainer)
+                );
+            }
+
+            // Replenish de humanos hasta 250
+            const vivos = this.humans.filter(h => !h._infected).length;
+            const faltan = Config.waveHumanTarget - vivos;
+            for (let i = 0; i < faltan; i++) {
+                const hx = Utils.randomBetween(80, Config.worldWidth - 80);
+                const hy = Utils.randomBetween(80, Config.worldHeight - 80);
+                const esPeleador = Math.random() < Config.brawlerRatio;
+                this.humans.push(
+                    esPeleador
+                        ? new Peleador(hx, hy, this.worldContainer)
+                        : new Humano(hx, hy, this.worldContainer)
+                );
+            }
+        }
+
+        // HUD: wave y tiempo restante
+        const segsRestantes = Math.ceil(this._waveTimer / 60);
+        if (counter) counter.textContent =
+            `WAVE ${this._waveNumber}/${Config.waveTotalWaves} — ${segsRestantes}s`;
+    }
+
+    _mostrarVictoria() {
+        this.app.ticker.stop();
+        const screen = document.getElementById('victory-screen');
+        if (screen) screen.style.display = 'flex';
     }
 };

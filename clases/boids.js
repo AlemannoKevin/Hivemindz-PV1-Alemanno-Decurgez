@@ -6,14 +6,21 @@ const Boids = {
         let sepX = 0, sepY = 0, sepCount = 0;
         let aliX = 0, aliY = 0, aliCount = 0;
         let cohX = 0, cohY = 0, cohCount = 0;
+        let vecinosCont = 0;
+        const maxVecinos = Config.boidsMaxNeighbors || 25;
 
         for (const neighbor of neighbors) {
             if (neighbor === entity) continue;
+            if (vecinosCont >= maxVecinos) break;
 
             const dx = entity.x - neighbor.x;
             const dy = entity.y - neighbor.y;
             const dist = Math.hypot(dx, dy);
             if (dist === 0) continue;
+
+            // Solo contamos vecinos dentro del radio mayor
+            if (dist > Config.boidsCohRadius) continue;
+            vecinosCont++;
 
             if (dist < Config.boidsSepRadius) {
                 const strength = (Config.boidsSepRadius - dist) / Config.boidsSepRadius;
@@ -28,11 +35,9 @@ const Boids = {
                 aliCount++;
             }
 
-            if (dist < Config.boidsCohRadius) {
-                cohX += neighbor.x;
-                cohY += neighbor.y;
-                cohCount++;
-            }
+            cohX += neighbor.x;
+            cohY += neighbor.y;
+            cohCount++;
         }
 
         let forceX = 0, forceY = 0;

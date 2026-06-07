@@ -62,28 +62,38 @@ class Zombie extends GameObject{
     
         if (this._slowTimer > 0) this._slowTimer -= deltaTime;
 
-        // En modo biomass: el movimiento lo maneja BiomassBall
-        if (this._bioBall) {
+        // En modo biomass o comeTogether: el movimiento lo manejan sus clases
+        if (this._comeTogether) {
             this._setAnimation('move', true);
             return;
         }
-        // Limpiamos contorno si no está siendo controlado
+        // _bioBall: resistencia al push, siguen con AI normal
+        if (this._bioBall) {
+            this._pushVx *= Config.bioPushResist;
+            this._pushVy *= Config.bioPushResist;
+        }
         this._actualizarContorno(false);
 
-        for (const other of allZombies) {
-            if (other === this) continue;
-            const dx = this.x - other.x;
-            const dy = this.y - other.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist > 0 && dist < Config.boidsSepRadius) {
-                const push = (Config.boidsSepRadius - dist) / Config.boidsSepRadius * 1.8;
-                this.x += (dx / dist) * push;
-                this.y += (dy / dist) * push;
+        // El zombie central de biomass ignora el empuje de separación
+        if (!this._bioCentral) {
+            for (const other of allZombies) {
+                if (other === this) continue;
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0 && dist < Config.boidsSepRadius) {
+                    const push = (Config.boidsSepRadius - dist) / Config.boidsSepRadius * 1.8;
+                    this.x += (dx / dist) * push;
+                    this.y += (dy / dist) * push;
+                }
             }
         }
 
         let nearestTarget = null;
-        let nearestDist   = Config.zombieSeekRange;
+        const detectRange = this._bioCentral
+            ? Config.zombieSeekRange * (this._bioDetectBoost || 1)
+            : Config.zombieSeekRange;
+        let nearestDist   = detectRange;
 
         for (const human of allHumans) {
             if (human._infected || human._turning) continue;
@@ -152,8 +162,9 @@ class Zombie extends GameObject{
         this.headingX = direction.x;
         this.headingY = direction.y;
 
-        const orbitBoost = (Game.instance?._lmbUpgrade === 'orbit') ? Config.orbitSpeedBoost : 1;
-        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost * orbitBoost;
+        const orbitBoost   = (Game.instance?._lmbUpgrade === 'orbit') ? Config.orbitSpeedBoost : 1;
+        const centralBoost = this._bioCentral ? Config.bioCentralSpeedBoost : 1;
+        const speedMultiplier = (this._slowTimer > 0 ? Config.brawlerSlowFactor : 1) * speedBoost * orbitBoost * centralBoost;
         this.x += direction.x * Config.zombieSpeed * speedMultiplier * deltaTime;
         this.y += direction.y * Config.zombieSpeed * speedMultiplier * deltaTime;
 
@@ -194,9 +205,17 @@ class Zombie extends GameObject{
 
                     const finalDist = Utils.distance(this.x, this.y, capturedTarget.x, capturedTarget.y);
                     if (finalDist < Config.zombieAttackRange + 20) {
-                        
                         if (capturedTarget.startInfection) {
-                            capturedTarget.startInfection(worldContainer, allZombies);
+                            if (capturedTarget instanceof Peleador) {
+                                capturedTarget._infeccionAcum = (capturedTarget._infeccionAcum || 0) + 1;
+                                if (capturedTarget._actualizarBarraInfeccion) capturedTarget._actualizarBarraInfeccion();
+                                if (capturedTarget._infeccionAcum >= Config.brawlerInfectHits) {
+                                    capturedTarget._infeccionAcum = 0;
+                                    capturedTarget.startInfection(worldContainer, allZombies);
+                                }
+                            } else {
+                                capturedTarget.startInfection(worldContainer, allZombies);
+                            }
                         } else if (capturedTarget.takeDamage) {
                             capturedTarget.takeDamage();
                         }
