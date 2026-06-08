@@ -33,6 +33,7 @@
 <script>
     function startGame(mode) {
         document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('start-timer').style.display = 'block';
         Game.instance._gameMode = mode;
         if (mode === 'waves') {
             Game.instance._waveMode         = true;
@@ -122,17 +123,18 @@
     ">BACK TO MENU</button>
 </div>
 
-<div id="cooldown-bars" style="
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: none;
-    gap: 24px;
-    align-items: flex-end;
-    z-index: 10;
-    pointer-events: none;
-">
+    <div id="cooldown-bars" style="
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: none;
+        gap: 24px;
+        align-items: flex-end;
+        z-index: 10;
+        pointer-events: none;
+    ">
+
     <!-- Health -->
     <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
         <div style="
@@ -291,6 +293,23 @@
     pointer-events: none;
 ">
     HUMANS: 0
+</div>
+<div id="start-timer" style="
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: monospace;
+    font-size: 22px;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 3px;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    z-index: 10;
+    pointer-events: none;
+">
+    TRANSFORMING IN: 15s
 </div>
 </body>
 </html>

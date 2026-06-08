@@ -149,12 +149,12 @@ class Zombie extends GameObject{
             cohesionWeight:   0.7,
         });
         
-        const obstacleForce = Utils.repelFromPoint(
+        const obstacleForce = Utils.repelFromObstacles(
             this.x, this.y,
-            Game.instance.obstacle.x, Game.instance.obstacle.y,
             Config.obstacleRepelRadius,
             Config.obstacleRepelForce
         );
+
         goalX += obstacleForce.x;
         goalY += obstacleForce.y;
 
@@ -167,8 +167,9 @@ class Zombie extends GameObject{
      
         if (this._ctBoostTimer > 0) {
             this._ctBoostTimer -= deltaTime;
-            if (this._ctBoostTimer <= 0 && this.sprite) {
-                this.sprite.tint = 0xffffff;
+            if (this._ctBoostTimer <= 0) {
+                if (this.sprite) this.sprite.tint = 0xffffff;
+                this._ctReducedAttackCD = false;
             }
         }
         
@@ -201,8 +202,9 @@ class Zombie extends GameObject{
             }
 
             if (targetInRange && !this._isAttacking && this._attackCooldown <= 0) {
-                this._isAttacking = true;
-                this._attackCooldown = Config.zombieAttackCooldown;
+                this._isAttacking    = true;
+                const attackCDMult   = this._ctReducedAttackCD ? Config.comeTogetherAttackCooldownMult : 1;
+                this._attackCooldown = Config.zombieAttackCooldown * attackCDMult;
                 this._setAnimation('attack', false);
 
                 const capturedTarget = targetInRange;

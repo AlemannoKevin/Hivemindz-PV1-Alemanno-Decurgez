@@ -23,19 +23,22 @@ class Game {
         this._habilidadesUsadas = [];                   // ids ya ofrecidos
         this._zombieProyectil   = null;                 // zombie volando (combustion)
         this._combustionCD      = 0;                    // cooldown de combustion 
-        this._bioball          = null;                  // instancia activa de BiomassBall
-        this._bioCD            = 0;                     // cooldown post-bola
-        this._comeTogether     = null;  // instancia activa de ComeTogether
-        this._comeTogetherCD   = 0;
-        this._waveMode         = false;
-        this._waveNumber       = 0;
-        this._waveTimer        = 0;
-        this._waveUpgradeTimer = 0;
-        this._gameMode         = null;  // 'normal' o 'waves'
-        this._combustionClick  = false;                 // flag de click para combustion
-        this._lmbOverheat      = Config.lmbOverheatMax; // carga actual
-        this._lmbOnCooldown    = false;                 // en cooldown duro
-        this._lmbCooldownTimer = 0;
+        this._bioball           = null;                 // instancia activa de BiomassBall
+        this._bioCD             = 0;                    // cooldown post-bola
+        this._comeTogether      = null;                 // instancia activa de ComeTogether
+        this._comeTogetherCD    = 0;
+        this._waveMode          = false;
+        this._waveNumber        = 0;
+        this._waveTimer         = 0;
+        this._waveUpgradeTimer  = 0;
+        this._gameMode          = null;                  // 'normal' o 'waves'
+        this._combustionClick   = false;                 // flag de click para combustion
+        this._lmbOverheat       = Config.lmbOverheatMax; // carga actual
+        this._lmbOnCooldown     = false;                 // en cooldown duro
+        this._lmbCooldownTimer  = 0;
+        this._startTimer        = Config.startTimerDuration;
+        this._startTimerOn      = true;
+        this._necroticPulses    = null;
 
         setup().then(() => this.start());
     }
@@ -55,6 +58,7 @@ class Game {
         await PIXI.Assets.load([
             { alias: 'testBackground',  src: 'testBackground.png'  },
             { alias: 'testBackground2', src: 'testBackground2.png' },
+            { alias: 'ruinedCar1',      src: 'ruinedCar1.png'      },
         ]);
        
         this.worldContainer = new PIXI.Container();
@@ -63,11 +67,22 @@ class Game {
         
         World.buildBackground(this.worldContainer);
 
+        // Obstáculo principal (el que usan los boids como referencia)
         this.obstacle = new Obstacle(
             Config.worldWidth  / 2 + 150,
             Config.worldHeight / 2 + 100,
             this.worldContainer
         );
+
+        // Obstáculos adicionales decorativos
+        this._obstacles = [
+            new Obstacle(Config.worldWidth * 0.15, Config.worldHeight * 0.2,  this.worldContainer),
+            new Obstacle(Config.worldWidth * 0.8,  Config.worldHeight * 0.15, this.worldContainer),
+            new Obstacle(Config.worldWidth * 0.25, Config.worldHeight * 0.75, this.worldContainer),
+            new Obstacle(Config.worldWidth * 0.75, Config.worldHeight * 0.8,  this.worldContainer),
+            new Obstacle(Config.worldWidth * 0.5,  Config.worldHeight * 0.2,  this.worldContainer),
+            new Obstacle(Config.worldWidth * 0.6,  Config.worldHeight * 0.65, this.worldContainer),
+        ];
         
         Input.init();
         Mouse.init();
@@ -117,10 +132,13 @@ class Game {
             // RMB
             if (!this.player.isZombie) {
                 this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+                this._startTimerOn = false;
+                const timerEl = document.getElementById('start-timer');
+                if (timerEl) timerEl.style.display = 'none';
                 return;
             }
 
-            if (this.player._bulletCooldown <= 0 && !this.player._comeTogether) {
+            if (this.player._bulletCooldown <= 0 && !this.player._comeTogether && this._rmbUpgrade !== 'necrotic') {
                 this.player.attack();
                 const angle = Utils.angleTo(this.player.x, this.player.y, mx, my);
 
@@ -212,7 +230,24 @@ class Game {
 
     _tick(delta) {
         if (this._paused) return;
-        if (!this._gameMode) return; // esperamos a que el jugador elija modo
+        if (!this._gameMode) return;
+
+        // Timer de inicio
+        if (this._startTimerOn) {
+            this._startTimer -= delta;
+            const timerEl = document.getElementById('start-timer');
+            if (timerEl) {
+                const segs = Math.ceil(this._startTimer / 60);
+                timerEl.textContent = `TRANSFORMING IN: ${segs}s`;
+            }
+            if (this._startTimer <= 0) {
+                this._startTimerOn = false;
+                if (timerEl) timerEl.style.display = 'none';
+                if (!this.player.isZombie) {
+                    this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+                }
+            }
+        }
 
         this.player.update(delta);
 
@@ -372,6 +407,14 @@ class Game {
             this._tickCombustion(delta);
         }
 
+        // RMB: necrotic pulses
+        if (this._rmbUpgrade === 'necrotic' && this.player.isZombie) {
+            if (!this._necroticPulses) {
+                this._necroticPulses = new NecroticPulses(this.player, this.worldContainer);
+            }
+            this._necroticPulses.update(delta, this.humans, this.policia, this.zombies);
+        }
+
         // LMB: come together
         if (this._lmbUpgrade === 'cometogether') {
             if (this._comeTogether && !this._comeTogether._muerto) {
@@ -445,10 +488,16 @@ class Game {
                 this._comeTogether = null;
             }
             this._lmbUpgrade = id;
+
         } else {
             this._rmbUpgrade = id;
             const cdShot = document.getElementById('cd-shot');
-            if (cdShot) cdShot.style.background = id === 'dagger' ? '#ffb74d' : '#33691e';
+            if (cdShot) cdShot.style.background = id === 'dagger' ? '#ffb74d' : id === 'necrotic' ? '#69f0ae' : '#33691e';
+            if (id === 'necrotic') {
+                this._necroticPulses = new NecroticPulses(this.player, this.worldContainer);
+            } else {
+                this._necroticPulses = null;
+            }
         }
     }
 

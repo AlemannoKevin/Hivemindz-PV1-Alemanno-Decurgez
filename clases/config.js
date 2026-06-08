@@ -10,6 +10,9 @@ const Config = {
     zoomMax:     2,
     zoomSpeed:   0.1,
 
+    // Obstáculos
+    obstacleHitboxSize:  80,    // tamaño de la hitbox (y sprite) del obstáculo
+
     // Humanos
     humanCount:          325,
     humanWalkSpeed:      0.9,
@@ -116,23 +119,32 @@ const Config = {
     pitEnemyDamage:       0.125,// daño a enemigos por pulso (1/4 de una bala básica: 0.25/4)
     
     // Come Together
-    comeTogetherRadius:      55,    // radio de agrupamiento alrededor del jugador
-    comeTogetherDuration:    190,   // frames de gather
-    comeTogetherForce:       115,    // fuerza de la explosión final
-    comeTogetherZombies:     30,    // máximo zombies convocados
-    comeTogetherSpeed:       2.4,   // multiplicador de velocidad hacia el jugador
-    comeTogetherBoostDuration: 200,  // frames del boost (2.5s)
-    comeTogetherSpeedBoost:    2.25,  // multiplicador de velocidad
-    comeTogetherDmgReduction:  0.5,  // multiplicador de daño recibido
+    comeTogetherRadius:      55,             // radio de agrupamiento alrededor del jugador
+    comeTogetherDuration:    190,            // frames de gather
+    comeTogetherForce:       115,            // fuerza de la explosión final
+    comeTogetherZombies:     30,             // máximo zombies convocados
+    comeTogetherSpeed:       2.4,            // multiplicador de velocidad hacia el jugador
+    comeTogetherBoostDuration: 200,          // frames del boost (2.5s)
+    comeTogetherSpeedBoost:    2.25,         // multiplicador de velocidad
+    comeTogetherDmgReduction:  0.5,          // multiplicador de daño recibido
+    comeTogetherAttackCooldownMult: 0.25,    // multiplicador del cooldown de ataque post-explosión
 
-    // Born Under Punches
+    // Necrotic Pulses
+    necroticPulseInterval:    60,   // frames entre pulsos (1 segundo)
+    necroticPulseRadius:      150,  // radio del pulso
+    necroticPulseInfectRate:  0.5, // infección por pulso (1/4 de bala básica)
+    necroticPulseEnemyDamage: 0.25, // daño a enemigos por pulso (1 bala básica)
+    necroticPulseSlowFactor:  0.5,  // multiplicador de velocidad de afectados
+    necroticPlayerSlow:       0.5,  // multiplicador de velocidad del jugador
+
+    /* Born Under Punches
     punchCooldown:           100,
     punchWidth:              80,   // ancho del cuadrado (eje perpendicular)
     punchHeight:             100,  // alto del cuadrado (eje de ataque)
     punchDamage:             0.5,
     punchKnockback:          20,
     punchRange:              100,
-    punchAngle:              1.2,  // apertura del abanico
+    punchAngle:              1.2,  // apertura del abanico*/
 
     // Waves Mode
     waveDuration:            3600,  // frames por wave (1 minuto a 60fps)
@@ -142,4 +154,7 @@ const Config = {
     waveHumanTarget:         250,   // humanos a mantener en el mapa
     waveUpgradeEvery:        10800, // frames entre upgrades (3 min)
     waveSwatRatio:           0.25,  // ratio de swats en waves
+
+    // Timer de inicio
+    startTimerDuration:      900,   // frames (15 segundos a 60fps)
 };

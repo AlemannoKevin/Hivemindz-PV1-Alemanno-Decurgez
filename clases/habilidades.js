@@ -7,10 +7,10 @@ const HABILIDADES = [
         desc: 'Zombies te rodean por unos segundos, antes de explotar y desparramarlos por la zona con buffs. Eres invulnerable durante la habilidad.',
     },
     {
-        id:   'punch',
+        id:   'necrotic',
         tipo: 'rmb',
-        nombre: 'Born Under Punches',
-        desc: 'Ataque melee. Infecta humanos y hace el doble de daño a enemigos. Empuja humanos y enemigos.',
+        nombre: 'Necrotic Pulses',
+        desc: 'Pulsos automáticos alrededor del jugador cada segundo. Infecta, ralentiza. El jugador se ralentiza pero el cooldown del dash baja al 25%.',
     },
     {
         id:   'biomass',
@@ -456,36 +456,112 @@ class ComeTogether {
                 z._pushVx = Math.cos(angle) * force;
                 z._pushVy = Math.sin(angle) * force;
                 // Boost temporal post-explosión
-                z._ctBoostTimer = Config.comeTogetherBoostDuration;
+                z._ctBoostTimer        = Config.comeTogetherBoostDuration;
+                z._ctReducedAttackCD   = true;
                 if (z.sprite) z.sprite.tint = 0xff4444;
             }
         }
 
-        // Animación de explosión tipo brawler
+        // 3 rings azules escalonados, tamaño triple del brawler
+        const cx = this._player.x;
+        const cy = this._player.y;
+        const maxRadius = Config.comeTogetherRadius * 3.9; // ~3x el radio original * 1.3
+
+        [0, 6, 12].forEach(frameOffset => {
+            const ring = new PIXI.Graphics();
+            this._wc.addChild(ring);
+            let frame = -frameOffset;
+            const frames = 30;
+            const animar = () => {
+                frame++;
+                if (frame <= 0) { requestAnimationFrame(animar); return; }
+                const progress = frame / frames;
+                const radius   = maxRadius * progress;
+                const alpha    = 1 - progress;
+                ring.clear();
+                ring.lineStyle(3, 0x4488ff, alpha);
+                ring.beginFill(0x4488ff, alpha * 0.12);
+                ring.drawCircle(cx, cy, radius);
+                ring.endFill();
+                if (frame < frames) requestAnimationFrame(animar);
+                else { ring.clear(); this._wc.removeChild(ring); }
+            };
+            requestAnimationFrame(animar);
+        });
+    }
+}
+
+class NecroticPulses {
+    constructor(player, worldContainer) {
+        this._player = player;
+        this._wc     = worldContainer;
+        this._timer  = Config.necroticPulseInterval;
+    }
+
+    update(delta, allHumans, allPolicia, zombies) {
+        this._timer -= delta;
+        if (this._timer <= 0) {
+            this._timer = Config.necroticPulseInterval;
+            this._pulsar(allHumans, allPolicia, zombies);
+        }
+    }
+
+    _pulsar(allHumans, allPolicia, zombies) {
+        const px = this._player.x;
+        const py = this._player.y;
+
+        // Visual: anillo verde que aparece y desaparece rápido
         const ring = new PIXI.Graphics();
         this._wc.addChild(ring);
         let frame = 0;
-        const frames = 25;
-        const cx = this._player.x;
-        const cy = this._player.y;
+        const frames = 18;
         const animar = () => {
             frame++;
             const progress = frame / frames;
-            const radius   = Config.comeTogetherRadius * 1.3 * progress;
-            const alpha    = 1 - progress;
+            // Fade in rápido, fade out rápido
+            const alpha = progress < 0.3
+                ? progress / 0.3
+                : 1 - ((progress - 0.3) / 0.7);
+            const radius = Config.necroticPulseRadius * (0.6 + progress * 0.4);
             ring.clear();
-            ring.lineStyle(3, 0x69f0ae, alpha);
-            ring.beginFill(0x69f0ae, alpha * 0.15);
-            ring.drawCircle(cx, cy, radius);
+            ring.lineStyle(3, 0x69f0ae, alpha * 0.9);
+            ring.beginFill(0x69f0ae, alpha * 0.12);
+            ring.drawCircle(px, py, radius);
             ring.endFill();
             if (frame < frames) requestAnimationFrame(animar);
             else { ring.clear(); this._wc.removeChild(ring); }
         };
         requestAnimationFrame(animar);
+
+        // Aplicar a humanos
+        for (const h of allHumans) {
+            if (h._infected) continue;
+            if (Utils.distance(h.x, h.y, px, py) > Config.necroticPulseRadius) continue;
+            const umbral = (h instanceof Peleador)
+                ? Config.brawlerInfectHits
+                : Config.daggerHitsToInfect;
+            h._infeccionAcum   = (h._infeccionAcum || 0) + Config.necroticPulseInfectRate;
+            h._necroticSlowed  = true;
+            if (h._actualizarBarraInfeccion) h._actualizarBarraInfeccion();
+            if (h._infeccionAcum >= umbral) {
+                h._infeccionAcum = 0;
+                h.startInfection(this._wc, zombies);
+            }
+        }
+
+        // Aplicar a enemigos
+        for (const cop of allPolicia) {
+            if (cop._dead) continue;
+            if (Utils.distance(cop.x, cop.y, px, py) > Config.necroticPulseRadius) continue;
+            cop._necroticSlowed = true;
+            cop._hits -= Config.necroticPulseEnemyDamage / Config.policiaBulletDamage;
+            if (cop._actualizarBarraVida) cop._actualizarBarraVida();
+            if (cop._hits <= 0) cop._dead = true;
+        }
     }
 }
 
-function aplicarPunch(player, humans, policia, zombies, worldContainer, cursorX, cursorY) {
+/*function aplicarPunch(player, humans, policia, zombies, worldContainer, cursorX, cursorY) {
     const px        = player.x;
     const py        = player.y;
     const angleBase = Utils.angleTo(px, py, cursorX, cursorY);
@@ -551,4 +627,4 @@ function aplicarPunch(player, humans, policia, zombies, worldContainer, cursorX,
         if (cop._actualizarBarraVida) cop._actualizarBarraVida();
         if (cop._hits <= 0) cop._dead = true;
     }
-}
+}*/

@@ -39,4 +39,19 @@ const Utils = {
         const norm     = Utils.normalize(dx, dy);
         return { x: norm.x * strength, y: norm.y * strength };
     },
+
+    repelFromObstacles(entityX, entityY, radius, force) {
+        let totalX = 0, totalY = 0;
+        const instance = Game.instance;
+        if (!instance) return { x: 0, y: 0 };
+
+        const obstacles = [instance.obstacle, ...(instance._obstacles || [])];
+        for (const obs of obstacles) {
+            if (!obs) continue;
+            const f = Utils.repelFromPoint(entityX, entityY, obs.x, obs.y, radius, force);
+            totalX += f.x;
+            totalY += f.y;
+        }
+        return { x: totalX, y: totalY };
+    },
 };

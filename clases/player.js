@@ -130,8 +130,9 @@ class Player {
         const dir      = Utils.normalize(dx, dy);
         this._dashVx   = dir.x * Config.playerDashSpeed;
         this._dashVy   = dir.y * Config.playerDashSpeed;
-        this._dashDuration  = Config.playerDashDuration;
-        this._dashCooldown  = Config.playerDashCooldown;
+        const necroCD      = (Game.instance?._rmbUpgrade === 'necrotic') ? 0.5 : 1;
+        this._dashDuration = Config.playerDashDuration;
+        this._dashCooldown = Config.playerDashCooldown * necroCD;
     }
 
     _spawnDashTrail(worldContainer) {
@@ -191,8 +192,10 @@ class Player {
             }
         } else {
             if (moveX !== 0 && moveY !== 0) { moveX *= 0.707; moveY *= 0.707; }
-            this.x += moveX * Config.playerSpeed * deltaTime;
-            this.y += moveY * Config.playerSpeed * deltaTime;
+
+            const necroSlow = (Game.instance?._rmbUpgrade === 'necrotic') ? Config.necroticPlayerSlow : 1;
+            this.x += moveX * Config.playerSpeed * deltaTime * necroSlow;
+            this.y += moveY * Config.playerSpeed * deltaTime * necroSlow;
         }
 
         if (this._pushVx || this._pushVy) {
@@ -235,11 +238,18 @@ class Player {
         this.handleMovement(deltaTime);
         this.container.x = this.x;
         this.container.y = this.y;
-        const dashPct = this._dashCooldown > 0
-            ? 1 - (this._dashCooldown / Config.playerDashCooldown)
+        
+        const necroCD  = (Game.instance?._rmbUpgrade === 'necrotic') ? 0.5 : 1;
+        const dashMax  = Config.playerDashCooldown * necroCD;
+        const dashPct  = this._dashCooldown > 0
+            ? 1 - (this._dashCooldown / dashMax)
             : 1;
-        const shotPct = this._bulletCooldown > 0
-            ? 1 - (this._bulletCooldown / Config.playerBulletCooldown)
+        const rmbUpgrade = Game.instance?._rmbUpgrade;
+        const shotMax  = rmbUpgrade === 'dagger'   ? Config.daggerCooldown
+                       : rmbUpgrade === 'punch'    ? Config.punchCooldown
+                       : Config.playerBulletCooldown;
+        const shotPct  = this._bulletCooldown > 0
+            ? 1 - (this._bulletCooldown / shotMax)
             : 1;
 
         const cdDash = document.getElementById('cd-dash');

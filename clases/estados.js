@@ -38,9 +38,8 @@ class HumanoWanderState {
         let goalX = humano._wanderDirX; 
         let goalY = humano._wanderDirY;
 
-        const obstacleForce = Utils.repelFromPoint(
+        const obstacleForce = Utils.repelFromObstacles(
             humano.x, humano.y,
-            Game.instance.obstacle.x, Game.instance.obstacle.y,
             Config.obstacleRepelRadius,
             Config.obstacleRepelForce
         );
@@ -57,9 +56,12 @@ class HumanoWanderState {
         humano.headingX = direction.x;
         humano.headingY = direction.y;
         
-        const pitMult = context.pitMult ?? 1;
-        humano.x += direction.x * Config.humanWalkSpeed * deltaTime * pitMult;
-        humano.y += direction.y * Config.humanWalkSpeed * deltaTime * pitMult;
+        const pitMult     = context.pitMult ?? 1;
+        const necroMult   = context.necroMult ?? 1;
+        // Aplicamos ambos slows (el más restrictivo gana via multiplicación)
+        // NUEVO en HumanoWanderState
+        humano.x += direction.x * Config.humanWalkSpeed * deltaTime * pitMult * necroMult;
+        humano.y += direction.y * Config.humanWalkSpeed * deltaTime * pitMult * necroMult;
     }
 
     exit(humano) { }
@@ -106,9 +108,8 @@ class HumanoFleeState {
             cohesionWeight:   0.2,
         });
 
-        const obstacleForce = Utils.repelFromPoint(
+        const obstacleForce = Utils.repelFromObstacles(
             humano.x, humano.y,
-            Game.instance.obstacle.x, Game.instance.obstacle.y,
             Config.obstacleRepelRadius,
             Config.obstacleRepelForce
         );
@@ -124,9 +125,11 @@ class HumanoFleeState {
 
         humano.headingX = direction.x;
         humano.headingY = direction.y;
-        const pitMult = context.pitMult ?? 1;
-        humano.x += direction.x * Config.humanFleeSpeed * deltaTime * pitMult;
-        humano.y += direction.y * Config.humanFleeSpeed * deltaTime * pitMult;
+        const pitMult     = context.pitMult ?? 1;
+        const necroMult   = context.necroMult ?? 1;
+        // Aplicamos ambos slows (el más restrictivo gana via multiplicación)
+        humano.x += direction.x * Config.humanFleeSpeed * deltaTime * pitMult * necroMult;
+        humano.y += direction.y * Config.humanFleeSpeed * deltaTime * pitMult * necroMult;
     }
 
     exit(humano) {
@@ -198,18 +201,19 @@ class PoliciaWanderState {
             }
         }
 
-        const obstacleForce = Utils.repelFromPoint(
+        const obstacleForce = Utils.repelFromObstacles(
             policia.x, policia.y,
-            Game.instance.obstacle.x, Game.instance.obstacle.y,
             Config.obstacleRepelRadius,
             Config.obstacleRepelForce
         );
+        
         policia.x += obstacleForce.x;
         policia.y += obstacleForce.y;
 
-        const pitMult = policia._pitSlowed ? Config.pitSlowFactor : 1;
-        policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime * pitMult;
-        policia.y += policia._wanderDirY * Config.policiaSpeed * deltaTime * pitMult;
+        const pitMult   = policia._pitSlowed   ? Config.pitSlowFactor        : 1;
+        const necroMult = policia._necroticSlowed ? Config.necroticPulseSlowFactor : 1;
+        policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime * pitMult * necroMult;
+        policia.y += policia._wanderDirY * Config.policiaSpeed * deltaTime * pitMult * necroMult;
         if (policia.flipSprite) policia.flipSprite(policia._wanderDirX);
     }
 
@@ -273,18 +277,19 @@ class PoliciaCombatState {
 
             const dir = diff > 0 ? 1 : -1;
 
-            const obstacleForce = Utils.repelFromPoint(
+            const obstacleForce = Utils.repelFromObstacles(
                 policia.x, policia.y,
-                Game.instance.obstacle.x, Game.instance.obstacle.y,
                 Config.obstacleRepelRadius,
                 Config.obstacleRepelForce
             );
+
             policia.x += obstacleForce.x;
             policia.y += obstacleForce.y;
 
-            const pitMult = policia._pitSlowed ? Config.pitSlowFactor : 1;
-            policia.x += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime * pitMult;
-            policia.y += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime * pitMult;
+            const pitMult   = policia._pitSlowed      ? Config.pitSlowFactor           : 1;
+            const necroMult = policia._necroticSlowed  ? Config.necroticPulseSlowFactor : 1;
+            policia.x += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
+            policia.y += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
         }
 
         policia._shootTimer -= deltaTime;
@@ -347,9 +352,8 @@ class PeleadorWanderState {
         let goalX = peleador._wanderDirX; 
         let goalY = peleador._wanderDirY;
 
-        const obstacleForce = Utils.repelFromPoint(
+        const obstacleForce = Utils.repelFromObstacles(
             peleador.x, peleador.y,
-            Game.instance.obstacle.x, Game.instance.obstacle.y,
             Config.obstacleRepelRadius,
             Config.obstacleRepelForce
         );
@@ -486,9 +490,8 @@ class PeleadorAttackState {
         let goalX = peleador._wanderDirX; 
         let goalY = peleador._wanderDirY;
 
-        const obstacleForce = Utils.repelFromPoint(
+        const obstacleForce = Utils.repelFromObstacles(
             peleador.x, peleador.y,
-            Game.instance.obstacle.x, Game.instance.obstacle.y,
             Config.obstacleRepelRadius,
             Config.obstacleRepelForce
         );

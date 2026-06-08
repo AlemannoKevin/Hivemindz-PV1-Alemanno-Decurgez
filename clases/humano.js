@@ -85,6 +85,7 @@ class Humano extends GameObject {
         // Reseteamos flags del charco cada frame (CharcoPit los vuelve a poner si aplica)
         this._pitSlowed  = false;
         this._pitNoAtack = false;
+        this._necroticSlowed = false;
 
         for (const other of allHumans) {
             if (other === this) continue;
@@ -99,8 +100,9 @@ class Humano extends GameObject {
         }
 
         // Pasamos el slowFactor al estado para que lo use al mover
-        const pitMult = this._pitSlowed ? Config.pitSlowFactor : 1;
-        this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult });
+        const pitMult   = this._pitSlowed     ? Config.pitSlowFactor           : 1;
+        const necroMult = this._necroticSlowed ? Config.necroticPulseSlowFactor : 1;
+        this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult, necroMult });
 
         this.flipSprite();
 
@@ -181,8 +183,9 @@ class Peleador extends Humano {
 
     update(allHumans, player, allZombies, deltaTime) {
 
-        this._pitSlowed  = false;
-        this._pitNoAtack = false;
+        this._pitSlowed      = false;
+        this._pitNoAtack     = false;
+        this._necroticSlowed = false;
 
         if (this._stunTimer > 0) {
             this._stunTimer  -= deltaTime;
@@ -221,8 +224,9 @@ class Peleador extends Humano {
             if (debeAtacar) this.setState(new PeleadorAttackState());
         }
 
-        const pitMult = this._pitSlowed ? Config.pitSlowFactor : 1;
-        this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult });
+        const pitMult   = this._pitSlowed      ? Config.pitSlowFactor           : 1;
+        const necroMult = this._necroticSlowed  ? Config.necroticPulseSlowFactor : 1;
+        this.currentState.update(this, { allHumans, player, allZombies, deltaTime, pitMult, necroMult });
 
         this.flipSprite();
 

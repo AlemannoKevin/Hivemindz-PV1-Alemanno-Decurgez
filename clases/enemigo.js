@@ -106,8 +106,11 @@ class Policia extends GameObject {
 
     update(allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime) {
         if (this._dead) return;
-        this._pitSlowed  = false;
-        this._pitNoAtack = false;
+     
+        this._pitSlowed      = false;
+        this._pitNoAtack     = false;
+        this._necroticSlowed = false;
+
         if (this._iFrames > 0) this._iFrames -= deltaTime;
         this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
         if (this._pushVx || this._pushVy) {
@@ -155,8 +158,11 @@ class Swat extends Policia {
 
     update(allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime) {
         if (this._dead) return;
+
         this._pitSlowed  = false;
         this._pitNoAtack = false;
+        this._necroticSlowed = false;
+        
         if (this._iFrames > 0) this._iFrames -= deltaTime;
         this._lastContext = { allZombies, allHumans, player, balas, worldContainer, deltaTime };
         this.currentState.update(this, { allZombies, allHumans, allPolicia, player, balas, worldContainer, deltaTime });
