@@ -1,3 +1,61 @@
+// ── Helpers compartidos ───────────────────────────────────────────────────────
+
+function _moverConBoids(entity, allHumans, goalX, goalY, speed, deltaTime, context) {
+    const boidsForce = Boids.computeSteering(entity, allHumans, {
+        separationWeight: 0,
+        alignmentWeight:  0.7,
+        cohesionWeight:   0.6,
+    });
+    const obs = Utils.repelFromObstacles(entity.x, entity.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+    goalX += obs.x;
+    goalY += obs.y;
+    const dir = Boids.blendWithGoal(goalX, goalY, boidsForce.x, boidsForce.y, 0.45);
+    entity.headingX = dir.x;
+    entity.headingY = dir.y;
+    const pitMult   = context.pitMult   ?? 1;
+    const necroMult = context.necroMult ?? 1;
+    entity.x += dir.x * speed * deltaTime * pitMult * necroMult;
+    entity.y += dir.y * speed * deltaTime * pitMult * necroMult;
+}
+
+function _actualizarWander(entity, deltaTime) {
+    entity._wanderTimer -= deltaTime;
+    if (entity._wanderTimer <= 0) {
+        const angle = Utils.randomAngle();
+        entity._wanderDirX  = Math.cos(angle);
+        entity._wanderDirY  = Math.sin(angle);
+        entity._wanderTimer = Utils.randomBetween(80, 160);
+    }
+}
+
+function _detectarAmenaza(entity, player, allZombies, range) {
+    if (player.isZombie && Utils.distance(entity.x, entity.y, player.x, player.y) < range) return true;
+    return allZombies.some(z => Utils.distance(entity.x, entity.y, z.x, z.y) < range);
+}
+
+function _separarDeAgentes(entity, agentes, allHumans) {
+    const sepDist = Config.boidsSepRadius * 1.5;
+    for (const other of [...agentes, ...allHumans]) {
+        if (other === entity || other._dead || other._infected) continue;
+        const dx = entity.x - other.x, dy = entity.y - other.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist > 0 && dist < sepDist) {
+            const push = (sepDist - dist) / sepDist * 1.5;
+            entity.x += (dx / dist) * push;
+            entity.y += (dy / dist) * push;
+        }
+    }
+}
+
+function _getSpeedMults(entity) {
+    return {
+        pitMult:   entity._pitSlowed      ? Config.pitSlowFactor           : 1,
+        necroMult: entity._necroticSlowed  ? Config.necroticPulseSlowFactor : 1,
+    };
+}
+
+// ── Humano: Wander ────────────────────────────────────────────────────────────
+
 class HumanoWanderState {
     enter(humano) {
         humano.exclamation.visible = false;
@@ -6,71 +64,24 @@ class HumanoWanderState {
 
     update(humano, context) {
         const { allHumans, player, allZombies, deltaTime } = context;
-        if (player.isZombie) {
-            const distToPlayer = Utils.distance(humano.x, humano.y, player.x, player.y);
-            if (distToPlayer < Config.humanFleeRange) {
-                humano.setState(new HumanoFleeState());
-                return;
-            }
-        }
-        for (const zombie of allZombies) {
-            const dz = Utils.distance(humano.x, humano.y, zombie.x, zombie.y);
-            if (dz < Config.humanFleeRange) {
-                humano.setState(new HumanoFleeState());
-                return;
-            }
-        }
 
-        humano._wanderTimer -= deltaTime;
-        if (humano._wanderTimer <= 0) {
-            const angle = Utils.randomAngle();
-            humano._wanderDirX = Math.cos(angle);
-            humano._wanderDirY = Math.sin(angle);
-            humano._wanderTimer = Utils.randomBetween(80, 160);
-        }
+        // Transición a huida
+        const threat = player.isZombie && Utils.distance(humano.x, humano.y, player.x, player.y) < Config.humanFleeRange
+            || allZombies.some(z => Utils.distance(humano.x, humano.y, z.x, z.y) < Config.humanFleeRange);
+        if (threat) { humano.setState(new HumanoFleeState()); return; }
 
-        const boidsForce = Boids.computeSteering(humano, allHumans, {
-            separationWeight: 0,
-            alignmentWeight:  0.7,
-            cohesionWeight:   0.6,
-        });
-
-        let goalX = humano._wanderDirX; 
-        let goalY = humano._wanderDirY;
-
-        const obstacleForce = Utils.repelFromObstacles(
-            humano.x, humano.y,
-            Config.obstacleRepelRadius,
-            Config.obstacleRepelForce
-        );
-
-        goalX += obstacleForce.x;
-        goalY += obstacleForce.y;
-
-        const direction = Boids.blendWithGoal(
-            goalX, goalY, 
-            boidsForce.x, boidsForce.y,
-            0.45
-        );
-
-        humano.headingX = direction.x;
-        humano.headingY = direction.y;
-        
-        const pitMult     = context.pitMult ?? 1;
-        const necroMult   = context.necroMult ?? 1;
-        // Aplicamos ambos slows (el más restrictivo gana via multiplicación)
-        // NUEVO en HumanoWanderState
-        humano.x += direction.x * Config.humanWalkSpeed * deltaTime * pitMult * necroMult;
-        humano.y += direction.y * Config.humanWalkSpeed * deltaTime * pitMult * necroMult;
+        _actualizarWander(humano, deltaTime);
+        _moverConBoids(humano, allHumans, humano._wanderDirX, humano._wanderDirY, Config.humanWalkSpeed, deltaTime, context);
     }
 
-    exit(humano) { }
+    exit(humano) {}
 }
 
+// ── Humano: Flee ──────────────────────────────────────────────────────────────
 
 class HumanoFleeState {
     enter(humano) {
-        humano._fleeTimer = Config.humanFleeFrames;
+        humano._fleeTimer    = Config.humanFleeFrames;
         humano._fleeCooldown = Config.humanFleeCooldown || 120;
         humano.exclamation.visible = true;
         humano.sprite.tint = 0xff8a65;
@@ -80,56 +91,18 @@ class HumanoFleeState {
         const { allHumans, player, allZombies, deltaTime } = context;
 
         humano._fleeTimer -= deltaTime;
-        if (humano._fleeTimer <= 0) {
-            humano.setState(new HumanoWanderState());
-            return;
+        if (humano._fleeTimer <= 0) { humano.setState(new HumanoWanderState()); return; }
+
+        // Amenaza más cercana
+        let threatX = player.x, threatY = player.y;
+        let closestDist = Utils.distance(humano.x, humano.y, player.x, player.y);
+        for (const z of allZombies) {
+            const d = Utils.distance(humano.x, humano.y, z.x, z.y);
+            if (d < closestDist) { closestDist = d; threatX = z.x; threatY = z.y; }
         }
 
-        let closestThreatX = player.x;
-        let closestThreatY = player.y;
-        let closestDist    = Utils.distance(humano.x, humano.y, player.x, player.y);
-
-        for (const zombie of allZombies) {
-            const dz = Utils.distance(humano.x, humano.y, zombie.x, zombie.y);
-            if (dz < closestDist) {
-                closestDist    = dz;
-                closestThreatX = zombie.x;
-                closestThreatY = zombie.y;
-            }
-        }
-
-        const awayAngle = Utils.angleTo(closestThreatX, closestThreatY, humano.x, humano.y);
-        let goalX = Math.cos(awayAngle);
-        let goalY = Math.sin(awayAngle);
-
-        const boidsForce = Boids.computeSteering(humano, allHumans, {
-            separationWeight: 0,
-            alignmentWeight:  1.4,
-            cohesionWeight:   0.2,
-        });
-
-        const obstacleForce = Utils.repelFromObstacles(
-            humano.x, humano.y,
-            Config.obstacleRepelRadius,
-            Config.obstacleRepelForce
-        );
-
-        goalX += obstacleForce.x;
-        goalY += obstacleForce.y;
-
-        const direction = Boids.blendWithGoal(
-            goalX, goalY, 
-            boidsForce.x, boidsForce.y,
-            0.45
-        );;
-
-        humano.headingX = direction.x;
-        humano.headingY = direction.y;
-        const pitMult     = context.pitMult ?? 1;
-        const necroMult   = context.necroMult ?? 1;
-        // Aplicamos ambos slows (el más restrictivo gana via multiplicación)
-        humano.x += direction.x * Config.humanFleeSpeed * deltaTime * pitMult * necroMult;
-        humano.y += direction.y * Config.humanFleeSpeed * deltaTime * pitMult * necroMult;
+        const awayAngle = Utils.angleTo(threatX, threatY, humano.x, humano.y);
+        _moverConBoids(humano, allHumans, Math.cos(awayAngle), Math.sin(awayAngle), Config.humanFleeSpeed, deltaTime, context);
     }
 
     exit(humano) {
@@ -137,6 +110,8 @@ class HumanoFleeState {
         humano.sprite.tint = 0xffffff;
     }
 }
+
+// ── Policía: Wander ───────────────────────────────────────────────────────────
 
 class PoliciaWanderState {
     enter(policia) {
@@ -146,80 +121,44 @@ class PoliciaWanderState {
     update(policia, context) {
         const { allZombies, allPolicia, allHumans, player, deltaTime } = context;
 
-        const allAgents = context.allPolicia || [];
-        for (const other of [...allAgents, ...allHumans]) {
-            if (other === policia || other._dead || other._infected) continue;
-            const dx   = policia.x - other.x;
-            const dy   = policia.y - other.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist > 0 && dist < Config.boidsSepRadius * 1.5) {
-                const push = (Config.boidsSepRadius * 1.5 - dist) / (Config.boidsSepRadius * 1.5) * 1.5;
-                policia.x += (dx / dist) * push;
-                policia.y += (dy / dist) * push;
-            }
-        }
-        
-        if (player.isZombie) {
-            const dp = Utils.distance(policia.x, policia.y, player.x, player.y);
-            if (dp < Config.policiaDetectRange) {
-                policia.setState(new PoliciaCombatState());
-                return;
-            }
+        _separarDeAgentes(policia, allPolicia, allHumans);
+
+        if (_detectarAmenaza(policia, player, allZombies, Config.policiaDetectRange)) {
+            policia.setState(new PoliciaCombatState());
+            return;
         }
 
-        for (const zombie of allZombies) {
-            const d = Utils.distance(policia.x, policia.y, zombie.x, zombie.y);
-            if (d < Config.policiaDetectRange) {
-                policia.setState(new PoliciaCombatState());
-                return;
-            }
-        }
-
-        //const allHumans = context.allHumans || [];
+        // Cohesión hacia humanos cercanos o wander libre
         let cohX = 0, cohY = 0, cohCount = 0;
-        for (const human of allHumans) {
-            if (human._infected) continue;
-            const d = Utils.distance(policia.x, policia.y, human.x, human.y);
-            if (d < Config.policiaFollowRange) {
-                cohX += human.x; cohY += human.y; cohCount++;
+        for (const h of allHumans) {
+            if (h._infected) continue;
+            if (Utils.distance(policia.x, policia.y, h.x, h.y) < Config.policiaFollowRange) {
+                cohX += h.x; cohY += h.y; cohCount++;
             }
         }
 
         if (cohCount > 0) {
-           
             const angle = Utils.angleTo(policia.x, policia.y, cohX / cohCount, cohY / cohCount);
             policia._wanderDirX = Math.cos(angle);
             policia._wanderDirY = Math.sin(angle);
         } else {
-            
-            policia._wanderTimer -= deltaTime;
-            if (policia._wanderTimer <= 0) {
-                const angle = Utils.randomAngle();
-                policia._wanderDirX = Math.cos(angle);
-                policia._wanderDirY = Math.sin(angle);
-                policia._wanderTimer = Utils.randomBetween(80, 160);
-            }
+            _actualizarWander(policia, deltaTime);
         }
 
-        const obstacleForce = Utils.repelFromObstacles(
-            policia.x, policia.y,
-            Config.obstacleRepelRadius,
-            Config.obstacleRepelForce
-        );
-        
-        policia.x += obstacleForce.x;
-        policia.y += obstacleForce.y;
+        const obs = Utils.repelFromObstacles(policia.x, policia.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+        policia.x += obs.x;
+        policia.y += obs.y;
 
-        const pitMult   = policia._pitSlowed   ? Config.pitSlowFactor        : 1;
-        const necroMult = policia._necroticSlowed ? Config.necroticPulseSlowFactor : 1;
+        const { pitMult, necroMult } = _getSpeedMults(policia);
         policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime * pitMult * necroMult;
         policia.y += policia._wanderDirY * Config.policiaSpeed * deltaTime * pitMult * necroMult;
-        if (policia.flipSprite) policia.flipSprite(policia._wanderDirX);
+        policia.flipSprite(policia._wanderDirX);
     }
 
-    exit(policia) { }
+    exit(policia) {}
 }
 
+// ── Policía: Combat ───────────────────────────────────────────────────────────
 
 class PoliciaCombatState {
     enter(policia) {
@@ -230,25 +169,14 @@ class PoliciaCombatState {
     update(policia, context) {
         const { allZombies, allHumans, player, balas, worldContainer, deltaTime } = context;
 
-        const allAgents = context.allAgents || [];
-        for (const other of [...allAgents, ...allHumans]) {
-            if (other === policia || other._dead || other._infected) continue;
-            const dx   = policia.x - other.x;
-            const dy   = policia.y - other.y;
-            const dist = Math.hypot(dx, dy);
-            if (dist > 0 && dist < Config.boidsSepRadius * 1.5) {
-                const push = (Config.boidsSepRadius * 1.5 - dist) / (Config.boidsSepRadius * 1.5) * 1.5;
-                policia.x += (dx / dist) * push;
-                policia.y += (dy / dist) * push;
-            }
-        }
+        _separarDeAgentes(policia, context.allPolicia || [], allHumans);
 
+        // Encontrar objetivo más cercano
         let nearestTarget = null;
         let nearestDist   = Config.policiaDetectRange * 1.3;
-
-        for (const zombie of allZombies) {
-            const d = Utils.distance(policia.x, policia.y, zombie.x, zombie.y);
-            if (d < nearestDist) { nearestDist = d; nearestTarget = zombie; }
+        for (const z of allZombies) {
+            const d = Utils.distance(policia.x, policia.y, z.x, z.y);
+            if (d < nearestDist) { nearestDist = d; nearestTarget = z; }
         }
         if (player.isZombie) {
             const dp = Utils.distance(policia.x, policia.y, player.x, player.y);
@@ -261,134 +189,77 @@ class PoliciaCombatState {
             return;
         }
 
-        if (policia.flipSprite) {
-            const dirX = nearestTarget.x - policia.x;
-            if (Math.abs(dirX) > 8) policia.flipSprite(dirX > 0 ? 1 : -1);
-        }
+        const dirX = nearestTarget.x - policia.x;
+        if (Math.abs(dirX) > 8) policia.flipSprite(dirX > 0 ? 1 : -1);
 
         if (policia._isShooting) return;
 
+        // Movimiento hacia rango ideal
         const diff = nearestDist - Config.policiaIdealRange;
         if (Math.abs(diff) > 20) {
-            const angle = Utils.angleTo(
-                policia.x, policia.y,
-                nearestTarget.x, nearestTarget.y
-            );
-
-            const dir = diff > 0 ? 1 : -1;
-
-            const obstacleForce = Utils.repelFromObstacles(
-                policia.x, policia.y,
-                Config.obstacleRepelRadius,
-                Config.obstacleRepelForce
-            );
-
-            policia.x += obstacleForce.x;
-            policia.y += obstacleForce.y;
-
-            const pitMult   = policia._pitSlowed      ? Config.pitSlowFactor           : 1;
-            const necroMult = policia._necroticSlowed  ? Config.necroticPulseSlowFactor : 1;
-            policia.x += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
-            policia.y += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
+            const angle = Utils.angleTo(policia.x, policia.y, nearestTarget.x, nearestTarget.y);
+            const dir   = diff > 0 ? 1 : -1;
+            const obs   = Utils.repelFromObstacles(policia.x, policia.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+            policia.x  += obs.x;
+            policia.y  += obs.y;
+            const { pitMult, necroMult } = _getSpeedMults(policia);
+            policia.x  += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
+            policia.y  += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
         }
 
+        // Disparo
         policia._shootTimer -= deltaTime;
-        if (policia._shootTimer <= 0 &&
-            nearestDist < Config.policiaShootRange &&
-            !policia._pitNoAtack) {
-            policia._shootTimer  = Config.policiaShootCooldown;
-            policia._isShooting  = true;
+        if (policia._shootTimer <= 0 && nearestDist < Config.policiaShootRange && !policia._pitNoAtack) {
+            policia._shootTimer = Config.policiaShootCooldown;
+            policia._isShooting = true;
 
-            if (policia._setAnimation) {
-                policia._setAnimation('attack', false);
-                policia.sprite.onComplete = () => {
-                    policia._isShooting = false;
-                    policia._setAnimation('move', true);
-                    policia.sprite.onComplete = null;
-                };
-            } else {
+            policia._setAnimation('attack', false);
+            policia.sprite.onComplete = () => {
                 policia._isShooting = false;
-            }
+                policia._setAnimation('move', true);
+                policia.sprite.onComplete = null;
+            };
 
             if (policia._shoot) {
                 policia._shoot(nearestTarget.x, nearestTarget.y, balas, worldContainer);
             } else {
-                const angle = Utils.angleTo(
-                    policia.x, policia.y,
-                    nearestTarget.x, nearestTarget.y
-                );
+                const angle = Utils.angleTo(policia.x, policia.y, nearestTarget.x, nearestTarget.y);
                 balas.push(new BalaPolicia(policia.x, policia.y, angle, worldContainer));
             }
         }
     }
 
-    exit(policia) {
-        policia._isShooting = false;
-    }
+    exit(policia) { policia._isShooting = false; }
 }
 
+// ── Peleador: Wander ──────────────────────────────────────────────────────────
+
 class PeleadorWanderState {
-    enter(peleador) {
-        
-    }
+    enter(peleador) {}
 
     update(peleador, context) {
         const { allHumans, deltaTime } = context;
-
-        peleador._wanderTimer -= deltaTime;
-        if (peleador._wanderTimer <= 0) {
-            const angle = Utils.randomAngle();
-            peleador._wanderDirX = Math.cos(angle);
-            peleador._wanderDirY = Math.sin(angle);
-            peleador._wanderTimer = Utils.randomBetween(80, 160);
-        }
-
-        const boidsForce = Boids.computeSteering(peleador, allHumans, {
-            separationWeight: 0,
-            alignmentWeight:  0.7,
-            cohesionWeight:   0.6,
-        });
-
-        let goalX = peleador._wanderDirX; 
-        let goalY = peleador._wanderDirY;
-
-        const obstacleForce = Utils.repelFromObstacles(
-            peleador.x, peleador.y,
-            Config.obstacleRepelRadius,
-            Config.obstacleRepelForce
-        );
-
-        goalX += obstacleForce.x;
-        goalY += obstacleForce.y;
-
-        const direction = Boids.blendWithGoal(
-            goalX, goalY, 
-            boidsForce.x, boidsForce.y,
-            0.45
-        );
-
-        peleador.headingX = direction.x;
-        peleador.headingY = direction.y;
-        peleador.x += direction.x * Config.humanWalkSpeed * deltaTime;
-        peleador.y += direction.y * Config.humanWalkSpeed * deltaTime;
+        _actualizarWander(peleador, deltaTime);
+        _moverConBoids(peleador, allHumans, peleador._wanderDirX, peleador._wanderDirY, Config.humanWalkSpeed, deltaTime, context);
     }
 
-    exit(peleador) { }
+    exit(peleador) {}
 }
 
+// ── Peleador: Attack ──────────────────────────────────────────────────────────
 
 class PeleadorAttackState {
-    
     enter(peleador) {
-        if (peleador._pitNoAtack) return; // el charco bloquea el inicio del ataque
+        if (peleador._pitNoAtack) return;
         peleador._batTimer = Config.brawlerBatCooldown;
 
+        // Animación de ataque
         if (brawlerAnimations.attack && peleador.sprite) {
             peleador.sprite.textures = brawlerAnimations.attack;
             peleador.sprite.loop     = false;
             peleador.sprite.gotoAndPlay(0);
             peleador.sprite.onComplete = () => {
-                if (brawlerAnimations.move && peleador.sprite) {
+                if (peleador.sprite) {
                     peleador.sprite.textures = brawlerAnimations.move;
                     peleador.sprite.loop     = true;
                     peleador.sprite.gotoAndPlay(0);
@@ -397,40 +268,37 @@ class PeleadorAttackState {
             };
         }
 
+        // Ring visual + swing con delay
         if (peleador._worldContainer) {
             setTimeout(() => {
                 this._swingBat(peleador);
-                const ring   = new PIXI.Graphics();
-                peleador._worldContainer.addChild(ring);
-                let frame    = 0;
-                const frames = 20;
-                const cx     = peleador.x;
-                const cy     = peleador.y;
-                const animate = () => {
-                    frame++;
-                    const progress = frame / frames;
-                    const radius   = Config.brawlerBatRange * progress;
-                    const alpha    = 1 - progress;
-                    ring.clear();
-                    ring.lineStyle(2, 0xffee58, alpha);
-                    ring.beginFill(0xffee58, alpha * 0.15);
-                    ring.drawCircle(cx, cy, radius);
-                    ring.endFill();
-                    if (frame < frames) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        ring.clear();
-                        peleador._worldContainer.removeChild(ring);
-                    }
-                };
-                requestAnimationFrame(animate);
+                this._animarRing(peleador);
             }, 250);
         }
     }
 
-        
+    _animarRing(peleador) {
+        const ring = new PIXI.Graphics();
+        peleador._worldContainer.addChild(ring);
+        const cx = peleador.x, cy = peleador.y;
+        let frame = 0;
+        const frames = 20;
+        const animate = () => {
+            frame++;
+            const progress = frame / frames;
+            const alpha    = 1 - progress;
+            ring.clear();
+            ring.lineStyle(2, 0xffee58, alpha);
+            ring.beginFill(0xffee58, alpha * 0.15);
+            ring.drawCircle(cx, cy, Config.brawlerBatRange * progress);
+            ring.endFill();
+            if (frame < frames) requestAnimationFrame(animate);
+            else { ring.clear(); peleador._worldContainer.removeChild(ring); }
+        };
+        requestAnimationFrame(animate);
+    }
 
-     _swingBat(peleador) {
+    _swingBat(peleador) {
         const allZombies = peleador._lastZombies || [];
         for (const zombie of allZombies) {
             const dist = Utils.distance(peleador.x, peleador.y, zombie.x, zombie.y);
@@ -448,68 +316,25 @@ class PeleadorAttackState {
         }
 
         const player = Game.instance?.player;
-        if (player && player.isZombie) {
+        if (player?.isZombie) {
             const dist = Utils.distance(peleador.x, peleador.y, player.x, player.y);
             if (dist < Config.brawlerBatRange && dist > 0) {
                 const angle     = Utils.angleTo(peleador.x, peleador.y, player.x, player.y);
                 const closeness = 1 - (dist / Config.brawlerBatRange);
-                const force     = Config.brawlerBatForce * (0.5 + closeness * 0.5);
-                player._pushVx  = Math.cos(angle) * force;
-                player._pushVy  = Math.sin(angle) * force;
+                player._pushVx  = Math.cos(angle) * Config.brawlerBatForce * (0.5 + closeness * 0.5);
+                player._pushVy  = Math.sin(angle) * Config.brawlerBatForce * (0.5 + closeness * 0.5);
             }
         }
     }
 
-
     update(peleador, context) {
         const { allHumans, allZombies, deltaTime } = context;
-
         peleador._lastZombies = allZombies;
-
-        peleador._batTimer -= deltaTime;
-
-        if (peleador._batTimer <= 0) {
-            peleador.setState(new PeleadorWanderState());
-            return;
-        }
-
-        peleador._wanderTimer -= deltaTime;
-        if (peleador._wanderTimer <= 0) {
-            const angle = Utils.randomAngle();
-            peleador._wanderDirX = Math.cos(angle);
-            peleador._wanderDirY = Math.sin(angle);
-            peleador._wanderTimer = Utils.randomBetween(80, 160);
-        }
-
-        const boidsForce = Boids.computeSteering(peleador, allHumans, {
-            separationWeight: 0,
-            alignmentWeight:  0.7,
-            cohesionWeight:   0.6,
-        });
-
-        let goalX = peleador._wanderDirX; 
-        let goalY = peleador._wanderDirY;
-
-        const obstacleForce = Utils.repelFromObstacles(
-            peleador.x, peleador.y,
-            Config.obstacleRepelRadius,
-            Config.obstacleRepelForce
-        );
-
-        goalX += obstacleForce.x;
-        goalY += obstacleForce.y;
-
-        const direction = Boids.blendWithGoal(
-            goalX, goalY, 
-            boidsForce.x, boidsForce.y,
-            0.45
-        );
-
-        peleador.headingX = direction.x;
-        peleador.headingY = direction.y;
-        peleador.x += direction.x * Config.humanWalkSpeed * deltaTime;
-        peleador.y += direction.y * Config.humanWalkSpeed * deltaTime;
+        peleador._batTimer   -= deltaTime;
+        if (peleador._batTimer <= 0) { peleador.setState(new PeleadorWanderState()); return; }
+        _actualizarWander(peleador, deltaTime);
+        _moverConBoids(peleador, allHumans, peleador._wanderDirX, peleador._wanderDirY, Config.humanWalkSpeed, deltaTime, context);
     }
 
-    exit(peleador) { }
+    exit(peleador) {}
 }

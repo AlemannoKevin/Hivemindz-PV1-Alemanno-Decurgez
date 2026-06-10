@@ -8,9 +8,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: monospace; }
     </style>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
-    
     <script src="Clases/config.js"></script>
     <script src="Clases/utils.js"></script>
     <script src="Clases/input.js"></script>
@@ -29,287 +27,173 @@
     <script src="Clases/habilidades.js"></script>
     <script src="Clases/game.js"></script>
 </head>
-
-<script>
-    function startGame(mode) {
-        document.getElementById('menu-screen').style.display = 'none';
-        document.getElementById('start-timer').style.display = 'block';
-        Game.instance._gameMode = mode;
-        if (mode === 'waves') {
-            Game.instance._waveMode         = true;
-            Game.instance._waveNumber       = 1;
-            Game.instance._waveTimer        = Config.waveDuration;
-            Game.instance._waveUpgradeTimer = Config.waveUpgradeEvery;
-            // Mostramos upgrade inicial antes de empezar
-            Game.instance._mostrarUpgrade();
-        }
-    }
-
-    function volverAlMenu() {
-        location.reload();
-    }
-</script>
-
 <body>
     <script>
         const gameobject = new Game();
     </script>
-    
-    <!-- Menú principal -->
-<div id="menu-screen" style="
-    display: flex;
-    position: fixed;
-    inset: 0;
-    background: #000;
-    color: #fff;
-    font-family: monospace;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 32px;
-    z-index: 300;
-">
-    <div style="font-size: 36px; font-weight: bold; letter-spacing: 6px; color: #69f0ae;">HIVEMINDZ</div>
-    <div style="display:flex; flex-direction:column; gap: 16px; align-items:center;">
-        <button onclick="startGame('normal')" style="
-            font-family: monospace; font-size: 16px; font-weight: bold;
-            letter-spacing: 3px; padding: 14px 40px;
-            background: transparent; color: #69f0ae;
-            border: 2px solid #69f0ae; border-radius: 8px;
-            cursor: pointer;
-        " onmouseover="this.style.background='rgba(105,240,174,0.15)'"
-           onmouseout="this.style.background='transparent'">
-            NORMAL MODE
-        </button>
-        <button onclick="startGame('waves')" style="
-            font-family: monospace; font-size: 16px; font-weight: bold;
-            letter-spacing: 3px; padding: 14px 40px;
-            background: transparent; color: #ffb74d;
-            border: 2px solid #ffb74d; border-radius: 8px;
-            cursor: pointer;
-        " onmouseover="this.style.background='rgba(255,183,77,0.15)'"
-           onmouseout="this.style.background='transparent'">
-            WAVES MODE
-        </button>
-    </div>
-</div>
 
-<!-- Pantalla de victoria -->
-<div id="victory-screen" style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.88);
-    color: #69f0ae;
-    font-family: monospace;
-    font-size: 48px;
-    font-weight: bold;
-    letter-spacing: 4px;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 100;
-">
-    <div>YOU WIN</div>
-    <div style="font-size:16px; color:#aaa; letter-spacing:2px;">the world is yours</div>
-    <button onclick="volverAlMenu()" style="
-        margin-top: 16px;
-        font-family: monospace; font-size: 14px;
-        letter-spacing: 2px; padding: 10px 28px;
-        background: transparent; color: #69f0ae;
-        border: 2px solid #69f0ae; border-radius: 8px;
-        cursor: pointer;
-    ">BACK TO MENU</button>
-</div>
-
-    <div id="cooldown-bars" style="
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        display: none;
-        gap: 24px;
-        align-items: flex-end;
-        z-index: 10;
-        pointer-events: none;
+    <!-- ── Menú principal ──────────────────────────────────────────────── -->
+    <div id="menu-screen" style="
+        display:flex; position:fixed; inset:0;
+        background:#000; color:#fff; font-family:monospace;
+        align-items:center; justify-content:center;
+        flex-direction:column; gap:32px; z-index:300;
     ">
-
-    <!-- Health -->
-    <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
-        <div style="
-            font-family: monospace; font-size: 10px;
-            font-weight: bold; color: #ffffff; letter-spacing: 2px;
-            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000;
-        ">HEALTH</div>
-        <div style="
-            width: 14px; height: 60px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 6px;
-            overflow: hidden;
-            display: flex; align-items: flex-end;
-        ">
-            <div id="health-bar" style="
-                width: 100%;
-                height: 100%;
-                background: #4caf50;
-                border-radius: 6px;
-                transition: height 0.1s, background 0.3s;
-            "></div>
+        <div style="font-size:36px;font-weight:bold;letter-spacing:6px;color:#69f0ae;">HIVEMINDZ</div>
+        <div style="display:flex;flex-direction:column;gap:16px;align-items:center;">
+            <button onclick="startGame('normal')" style="
+                font-family:monospace;font-size:16px;font-weight:bold;
+                letter-spacing:3px;padding:14px 40px;
+                background:transparent;color:#69f0ae;
+                border:2px solid #69f0ae;border-radius:8px;cursor:pointer;
+            " onmouseover="this.style.background='rgba(105,240,174,0.15)'"
+               onmouseout="this.style.background='transparent'">NORMAL MODE</button>
+            <button onclick="startGame('waves')" style="
+                font-family:monospace;font-size:16px;font-weight:bold;
+                letter-spacing:3px;padding:14px 40px;
+                background:transparent;color:#ffb74d;
+                border:2px solid #ffb74d;border-radius:8px;cursor:pointer;
+            " onmouseover="this.style.background='rgba(255,183,77,0.15)'"
+               onmouseout="this.style.background='transparent'">WAVES MODE</button>
         </div>
     </div>
 
-    <!-- DASH -->
-    <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
+    <!-- ── Barra de población (Plague Inc style) ───────────────────────── -->
+    <div id="population-bar-wrap" style="
+        display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
+        z-index:20; pointer-events:none;
+        background:rgba(0,0,0,0.55);
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:10px;
+        padding:6px 12px;
+        display:none;
+        flex-direction:column;
+        align-items:center;
+        gap:5px;
+        min-width:320px;
+    ">
+        <!-- Número total + etiquetas -->
+        <div style="display:flex;justify-content:space-between;width:100%;font-family:monospace;font-size:9px;letter-spacing:1px;color:rgba(255,255,255,0.5);">
+            <span id="pop-total" style="font-size:11px;color:#fff;font-weight:bold;letter-spacing:2px;">0</span>
+            <div style="display:flex;gap:10px;">
+                <span style="color:#4caf50;">■ HUMANS</span>
+                <span style="color:#69f0ae;">■ ZOMBIES</span>
+                <span style="color:#ffb74d;">■ FORCES</span>
+            </div>
+        </div>
+        <!-- Barra -->
         <div style="
-            font-family: monospace; font-size: 10px;
-            color: #fff; letter-spacing: 1px;
-            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000;
-        ">DASH</div>
-        <div style="
-            width: 60px; height: 60px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            background: rgba(0,0,0,0.5);
-            display: flex; align-items: flex-end;
-            overflow: hidden;
+            width:100%; height:10px;
+            border-radius:5px; overflow:hidden;
+            display:flex; background:#1a1a1a;
         ">
-            <div id="cd-dash" style="
-                width: 100%;
-                height: 100%;
-                background: #ffb74d;
-                transition: height 0.05s;
-            "></div>
+            <div id="pop-humans"  style="height:100%;background:#4caf50;transition:width 0.4s;width:100%;"></div>
+            <div id="pop-zombies" style="height:100%;background:#69f0ae;transition:width 0.4s;width:0%;"></div>
+            <div id="pop-forces"  style="height:100%;background:#ffb74d;transition:width 0.4s;width:0%;"></div>
         </div>
     </div>
 
-    <!-- LMB -->
-    <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
-        <div style="
-            font-family: monospace; font-size: 10px;
-            color: #fff; letter-spacing: 1px;
-            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000;
-        ">LMB</div>
-        <div style="
-            width: 60px; height: 60px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            background: rgba(0,0,0,0.5);
-            display: flex; align-items: flex-end;
-            overflow: hidden;
-        ">
-            <div id="cd-lmb" style="
-                width: 100%;
-                height: 100%;
-                background: #69f0ae;
-                transition: height 0.05s;
-            "></div>
+    <!-- ── HUD: barras de cooldown (top-right) ─────────────────────────── -->
+    <div id="cooldown-bars" style="
+        position:fixed; top:20px; right:20px;
+        display:none; gap:16px; align-items:flex-end;
+        z-index:10; pointer-events:none;
+    ">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="font-family:monospace;font-size:10px;font-weight:bold;color:#fff;letter-spacing:2px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">HP</div>
+            <div style="width:14px;height:60px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;">
+                <div id="health-bar" style="width:100%;height:100%;background:#4caf50;border-radius:6px;transition:height 0.1s,background 0.3s;"></div>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="font-family:monospace;font-size:10px;color:#fff;letter-spacing:1px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">DASH</div>
+            <div style="width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;overflow:hidden;">
+                <div id="cd-dash" style="width:100%;height:100%;background:#ffb74d;transition:height 0.05s;"></div>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="font-family:monospace;font-size:10px;color:#fff;letter-spacing:1px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">LMB</div>
+            <div style="width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;overflow:hidden;">
+                <div id="cd-lmb" style="width:100%;height:100%;background:#69f0ae;transition:height 0.05s;"></div>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
+            <div style="font-family:monospace;font-size:10px;color:#fff;letter-spacing:1px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">RMB</div>
+            <div style="width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;overflow:hidden;">
+                <div id="cd-shot" style="width:100%;height:100%;background:#69f0ae;transition:height 0.05s;"></div>
+            </div>
         </div>
     </div>
 
-    <!-- RMB -->
-    <div style="display:flex; flex-direction:column; align-items:center; gap:5px;">
-        <div style="
-            font-family: monospace; font-size: 10px;
-            color: #fff; letter-spacing: 1px;
-            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000;
-        ">RMB</div>
-        <div style="
-            width: 60px; height: 60px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 8px;
-            background: rgba(0,0,0,0.5);
-            display: flex; align-items: flex-end;
-            overflow: hidden;
-        ">
-            <div id="cd-shot" style="
-                width: 100%;
-                height: 100%;
-                background: #69f0ae;
-                transition: height 0.05s;
-            "></div>
-        </div>
+    <!-- ── HUD: info de waves (top-left) ───────────────────────────────── -->
+    <div id="wave-counter" style="
+        display:none; position:fixed; top:20px; left:20px;
+        font-family:monospace; font-size:14px; font-weight:bold;
+        color:#fff; letter-spacing:2px;
+        text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
+        z-index:10; pointer-events:none;
+    ">WAVE 1/9</div>
+
+    <!-- ── Timer de inicio (centrado arriba) ───────────────────────────── -->
+    <div id="start-timer" style="
+        display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%);
+        font-family:monospace; font-size:22px; font-weight:bold;
+        color:#fff; letter-spacing:3px;
+        text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
+        z-index:10; pointer-events:none;
+    ">TRANSFORMING IN: 15s</div>
+
+    <!-- ── Pantallas de estado ──────────────────────────────────────────── -->
+    <div id="death-screen" style="
+        display:none; position:fixed; inset:0;
+        background:rgba(0,0,0,0.85); color:#ff4444;
+        font-family:monospace; font-size:48px; font-weight:bold; letter-spacing:4px;
+        align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:100;
+    ">
+        <div>YOU DIED</div>
+        <div style="font-size:16px;color:#aaa;letter-spacing:2px;">the infection ends here</div>
+        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:14px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#ff4444;border:2px solid #ff4444;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
-</div>
 
-<div id="death-screen" style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    color: #ff4444;
-    font-family: monospace;
-    font-size: 48px;
-    font-weight: bold;
-    letter-spacing: 4px;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
-    z-index: 100;
-">
-    <div>YOU DIED</div>
-    <div style="font-size:16px; color:#aaa; letter-spacing:2px;">the infection ends here</div>
-    <button onclick="volverAlMenu()" style="
-        margin-top: 16px;
-        font-family: monospace; font-size: 14px;
-        letter-spacing: 2px; padding: 10px 28px;
-        background: transparent; color: #ff4444;
-        border: 2px solid #ff4444; border-radius: 8px;
-        cursor: pointer;
-    ">BACK TO MENU</button>
-</div>
+    <div id="victory-screen" style="
+        display:none; position:fixed; inset:0;
+        background:rgba(0,0,0,0.88); color:#69f0ae;
+        font-family:monospace; font-size:48px; font-weight:bold; letter-spacing:4px;
+        align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:100;
+    ">
+        <div>YOU WIN</div>
+        <div style="font-size:16px;color:#aaa;letter-spacing:2px;">the world is yours</div>
+        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:14px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
+    </div>
 
-<div id="upgrade-screen" style="
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.88);
-    color: #fff;
-    font-family: monospace;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 32px;
-    z-index: 200;
-">
-    <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; color: #69f0ae;">EVOLVE</div>
-    <div style="font-size: 13px; color: #aaa; letter-spacing: 2px;">choose one ability</div>
-    <div id="upgrade-cards" style="display:flex; gap: 32px;"></div>
-</div>
+    <div id="upgrade-screen" style="
+        display:none; position:fixed; inset:0;
+        background:rgba(0,0,0,0.88); color:#fff; font-family:monospace;
+        align-items:center; justify-content:center; flex-direction:column; gap:32px; z-index:200;
+    ">
+        <div style="font-size:28px;font-weight:bold;letter-spacing:4px;color:#69f0ae;">EVOLVE</div>
+        <div style="font-size:13px;color:#aaa;letter-spacing:2px;">choose one ability</div>
+        <div id="upgrade-cards" style="display:flex;gap:32px;"></div>
+    </div>
 
-<div id="human-counter" style="
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    font-family: monospace;
-    font-size: 14px;
-    font-weight: bold;
-    color: #ffffff;
-    letter-spacing: 2px;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-    z-index: 10;
-    pointer-events: none;
-">
-    HUMANS: 0
-</div>
-<div id="start-timer" style="
-    display: none;
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: monospace;
-    font-size: 22px;
-    font-weight: bold;
-    color: #ffffff;
-    letter-spacing: 3px;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-    z-index: 10;
-    pointer-events: none;
-">
-    TRANSFORMING IN: 15s
-</div>
+    <!-- ── Scripts ─────────────────────────────────────────────────────── -->
+    <script>
+        function startGame(mode) {
+            document.getElementById('menu-screen').style.display      = 'none';
+            document.getElementById('start-timer').style.display      = 'block';
+            document.getElementById('population-bar-wrap').style.display = 'flex';
+            Game.instance._gameMode = mode;
+            if (mode === 'waves') {
+                document.getElementById('wave-counter').style.display = 'block';
+                Game.instance._waveMode         = true;
+                Game.instance._waveNumber       = 1;
+                Game.instance._waveTimer        = Config.waveDuration;
+                Game.instance._waveUpgradeTimer = Config.waveUpgradeEvery;
+                Game.instance._mostrarUpgrade();
+            }
+        }
+
+        function volverAlMenu() { location.reload(); }
+    </script>
 </body>
 </html>

@@ -1,15 +1,3 @@
-/*function createFrames(imageName, frameCount, frameWidth, frameHeight) {
-    const baseTexture = PIXI.BaseTexture.from(imageName);
-    const frames = [];
-    const padding = 4;
-    
-    for (let i = 0; i < frameCount; i++) {
-        const rect = new PIXI.Rectangle((i * frameWidth) + padding, padding, frameWidth - (padding * 2), frameHeight - (padding * 2));
-        frames.push(new PIXI.Texture(baseTexture, rect));
-    }
-    return frames;
-}*/
-
 let brawlerAnimations = {};
 let playerAnimations  = {};
 let zeroAnimations    = {};
