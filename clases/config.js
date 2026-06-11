@@ -15,17 +15,17 @@ const Config = {
 
     // ── Humanos ───────────────────────────────────────────────────────────
     humanCount:      325,
-    humanWalkSpeed:  0.9,
-    humanFleeSpeed:  2.0,
+    humanWalkSpeed:  0.8,
+    humanFleeSpeed:  1.8,
     humanFleeRange:  180,
     humanFleeFrames: 240,
 
     // ── Peleador ──────────────────────────────────────────────────────────
     brawlerRatio:        0.15,
-    brawlerBatRange:     80,
-    brawlerBatForce:     35,
-    brawlerBatCooldown:  75,
-    brawlerSlowDuration: 50,
+    brawlerBatRange:     90,
+    brawlerBatForce:     40,
+    brawlerBatCooldown:  70,
+    brawlerSlowDuration: 75,
     brawlerSlowFactor:   0.5,
     brawlerInfectHits:   2,
 
@@ -36,48 +36,48 @@ const Config = {
     boidsMaxNeighbors: 25,
 
     // ── Jugador ───────────────────────────────────────────────────────────
-    playerMaxHealth:     10,
-    playerSpeed:         2.6,
+    playerMaxHealth:     12,
+    playerSpeed:         2.8,
     aoeRadius:           125,
     aoeFadeFrames:       30,
-    playerDashSpeed:     16,
+    playerDashSpeed:     18,
     playerDashDuration:  25,
     playerDashCooldown:  150,
-    playerBulletSpeed:   3.1,
-    playerBulletCooldown: 120,
+    playerBulletSpeed:   3.5,
+    playerBulletCooldown: 110,
+
+    // ── Zombies ───────────────────────────────────────────────────────────
+    zombieSpeed:          1.6,
+    zombieSeekRange:      325,
+    zombieAttackRange:    35,
+    zombieAttackCooldown: 150,
+
+    // ── Policía ───────────────────────────────────────────────────────────
+    policiaCount:        40,
+    policiaHits:         3,
+    policiaSpeed:        1.7,
+    policiaDetectRange:  225,
+    policiaShootRange:   225,
+    policiaShootCooldown: 90,
+    policiaBulletSpeed:  4,
+    policiaBulletDamage: 0.2,
+    policiaKnockback:    3,
+    policiaFollowRange:  250,
+    policiaIdealRange:   160,
+
+    // ── SWAT ──────────────────────────────────────────────────────────────
+    swatRatio:        0.3,
+    swatHits:         5,
+    swatSpreadAngle:  0.3,
+    swatBulletDamage: 0.3,
+    swatKnockback:    45,
 
     // ── LMB básico (overheat) ─────────────────────────────────────────────
     lmbOverheatMax:      300,
     lmbOverheatCooldown: 360,
     lmbRechargeRate:     0.75,
-    lmbSpeedBoost:       1.6,
-    lmbMaxZombies:       15,
-
-    // ── Zombies ───────────────────────────────────────────────────────────
-    zombieSpeed:          1.4,
-    zombieSeekRange:      325,
-    zombieAttackRange:    35,
-    zombieAttackCooldown: 250,
-
-    // ── Policía ───────────────────────────────────────────────────────────
-    policiaCount:        24,
-    policiaHits:         3,
-    policiaSpeed:        1.5,
-    policiaDetectRange:  225,
-    policiaShootRange:   225,
-    policiaShootCooldown: 90,
-    policiaBulletSpeed:  4,
-    policiaBulletDamage: 0.25,
-    policiaKnockback:    20,
-    policiaFollowRange:  250,
-    policiaIdealRange:   160,
-
-    // ── SWAT ──────────────────────────────────────────────────────────────
-    swatRatio:        0.25,
-    swatHits:         6,
-    swatSpreadAngle:  0.25,
-    swatBulletDamage: 0.5,
-    swatKnockback:    30,
+    lmbSpeedBoost:       1.8,
+    lmbMaxZombies:       20,
 
     // ── Habilidad: Biomass Collapse ───────────────────────────────────────
     bioBallRadius:        70,
@@ -106,8 +106,8 @@ const Config = {
     // ── Habilidad: Poisonous Pit ──────────────────────────────────────────
     pitDuration:         240,
     pitPulses:           4,
-    pitRadius:           85,
-    pitSlowFactor:       0.25,
+    pitRadius:           95,
+    pitSlowFactor:       0.15,
     pitHumanInfectRate:  0.5,
     pitEnemyDamage:      0.125,
 
@@ -123,21 +123,55 @@ const Config = {
     comeTogetherAttackCooldownMult: 0.25,
 
     // ── Habilidad: Necrotic Pulses ────────────────────────────────────────
-    necroticPulseInterval:    60,
-    necroticPulseRadius:      150,
-    necroticPulseInfectRate:  0.5,
-    necroticPulseEnemyDamage: 0.25,
+    necroticPulseInterval:    50,
+    necroticPulseRadius:      185,
+    necroticPulseInfectRate:  0.2,
+    necroticPulseEnemyDamage: 0.1,
     necroticPulseSlowFactor:  0.5,
-    necroticPlayerSlow:       0.5,
+    necroticPlayerSlow:       0.25,
 
     // ── Waves Mode ────────────────────────────────────────────────────────
-    waveDuration:       3600,
+    waveDuration:       1800,
     waveEnemyBase:      12,
     waveEnemyGrowth:    0.025,
-    waveTotalWaves:     9,
+    waveTotalWaves:     8,
     waveHumanTarget:    250,
-    waveUpgradeEvery:   10800,
+    waveUpgradeEvery:   3600,
     waveSwatRatio:      0.25,
+    
+    // ── HUD: colores ──────────────────────────────────────────────────────
+    colorLMB:             '#ffee00',  // amarillo brillante para todas las LMB
+    colorRMB:             '#15ff00',  // verde brillante para todas las RMB
+    colorDash:            '#ffb74d',  // naranja para el dash
+    colorHealthFull:      '#850a0a',
+    colorHealthMid:       '#850a0a',
+    colorHealthLow:       '#184219',
+    colorXPBar:           '#0717f1',
+    colorPopHumans:       '#0fb2e4',  // azul claro
+    colorPopZombies:      '#2e7d32',  // verde oscuro
+    colorPopForces:       '#0c3583',  // azul oscuro
+
+    // ── HUD: textos ───────────────────────────────────────────────────────
+    labelHealth:          'HEALTH',
+    labelXP:              'XP',
+    labelLMB:             'LMB',
+    labelRMB:             'RMB',
+    labelDash:            'DASH',
+    labelPopHumans:       'HUMANS',
+    labelPopZombies:      'ZOMBIES',
+    labelPopForces:       'POLICE',
+    hudFontSize:          25,    // tamaño de fuente del HUD en px
+    hudFontSizeLarge:     25,    // tamaño para labels de habilidades
+    colorControlled:      '#ffee88',  // hue amarillo claro para zombies controlados por LMB
+
+    // ── HUD: tamaños ──────────────────────────────────────────────────────
+    hudBarWidth:          300,   // ancho de las barras de salud y XP en px
+    hudCooldownRadius:    60,    // radio de los círculos de cooldown en px
+
+    // ── XP / niveles ──────────────────────────────────────────────────────
+    xpLevel1:             25,    // infectados para el primer nivel
+    xpLevel2:             125,   // infectados acumulados para el segundo nivel
+    xpLevel3:             225,   // infectados acumulados para el tercer nivel
 
     // ── Timer de inicio ───────────────────────────────────────────────────
     startTimerDuration: 900,

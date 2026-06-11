@@ -82,8 +82,10 @@ class BalaPolicia extends BalaBase {
         this._knockback = knockback;
         this.graphic = new PIXI.Graphics();
         this.graphic.beginFill(0xffeb3b);
-        this.graphic.drawCircle(0, 0, 3);
+        this.graphic.drawCircle(0, 0, 4);  
         this.graphic.endFill();
+        this.graphic.lineStyle(1.5, 0xff8f00, 0.6);
+        this.graphic.drawCircle(0, 0, 6);
         worldContainer.addChild(this.graphic);
     }
 
@@ -116,11 +118,21 @@ class BalaPolicia extends BalaBase {
         }
 
         const dmgMult = ctActivo ? Config.comeTogetherDmgReduction : 1;
-        zombie._hp = (zombie._hp ?? 1) - this._damage * dmgMult;
+        zombie._hp    = (zombie._hp ?? 1) - this._damage * dmgMult;
 
         if (zombie.sprite) {
             zombie.sprite.tint = 0xff4444;
-            setTimeout(() => { if (!zombie._dead && zombie.sprite) zombie.sprite.tint = 0xffffff; }, 150);
+            setTimeout(() => {
+                if (!zombie._dead && zombie.sprite) {
+                    if (zombie._ctBoostTimer > 0) {
+                        zombie.sprite.tint = 0xff4444;
+                    } else if (zombie._contornoActivo) {
+                        zombie.sprite.tint = 0xffee88;
+                    } else {
+                        zombie.sprite.tint = 0xffffff;
+                    }
+                }
+            }, 150);
         }
         if (zombie._hp <= 0) zombie._dead = true;
     }

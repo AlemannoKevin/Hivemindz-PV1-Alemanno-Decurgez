@@ -53,8 +53,8 @@ class Player {
     becomeZombie(worldContainer, humans, zombies) {
         if (this.isZombie) return;
         this.isZombie = true;
-        document.getElementById('cooldown-bars').style.display      = 'flex';
-        document.getElementById('population-bar-wrap').style.display = 'flex';
+        document.getElementById('hud-left').style.display  = 'flex';
+        document.getElementById('hud-right').style.display = 'flex';
         this._buildVisual();
         this._animarAOE(worldContainer);
         for (const h of humans) {
@@ -109,8 +109,8 @@ class Player {
         const pct = Math.max(0, this.health / Config.playerMaxHealth) * 100;
         const bar = document.getElementById('health-bar');
         if (bar) {
-            bar.style.height     = pct + '%';
-            bar.style.background = pct > 50 ? '#4caf50' : pct > 25 ? '#ffb74d' : '#ef5350';
+            bar.style.width      = pct + '%';
+            bar.style.background = pct > 50 ? Config.colorHealthFull : pct > 25 ? Config.colorHealthMid : Config.colorHealthLow;
         }
     }
 
@@ -204,18 +204,18 @@ class Player {
     }
 
     _actualizarBarrasHUD() {
-        const rmbUpgrade = Game.instance?._rmbUpgrade;
-        const dashMax    = Config.playerDashCooldown * this._necroCD();
-        const shotMax    = rmbUpgrade === 'dagger' ? Config.daggerCooldown
-                         : rmbUpgrade === 'punch'  ? Config.punchCooldown
-                         : Config.playerBulletCooldown;
+        const dashMax  = Config.playerDashCooldown * this._necroCD();
+        const dashPct  = this._dashCooldown > 0 ? 1 - (this._dashCooldown / dashMax) : 1;
+        const r        = 50;
+        const circum   = +(2 * Math.PI * r).toFixed(2);
 
-        const dashPct = this._dashCooldown > 0 ? 1 - (this._dashCooldown / dashMax) : 1;
-        const shotPct = this._bulletCooldown > 0 ? 1 - (this._bulletCooldown / shotMax) : 1;
+        const arcDash = document.getElementById('arc-dash');
+        if (arcDash) {
+            arcDash.style.stroke           = Config.colorDash;
+            arcDash.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, dashPct)))).toFixed(2);
+        }
 
-        const cdDash = document.getElementById('cd-dash');
-        const cdShot = document.getElementById('cd-shot');
-        if (cdDash) cdDash.style.height = (dashPct * 100) + '%';
-        if (cdShot) cdShot.style.height = (shotPct * 100) + '%';
+        const lblDashC = document.getElementById('label-dash-center');
+        if (lblDashC) lblDashC.textContent = Config.labelDash;
     }
 }

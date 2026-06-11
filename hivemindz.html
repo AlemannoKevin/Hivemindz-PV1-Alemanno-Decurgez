@@ -7,6 +7,68 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #000; overflow: hidden; font-family: monospace; }
+
+        .hud-bar-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .hud-bar-label {
+            font-family: monospace;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 2px;
+            -webkit-text-stroke: 0.5px #000;
+            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+        }
+        .hud-bar-track {
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .hud-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.15s, background 0.3s;
+        }
+
+        .cd-circle-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .cd-circle-label {
+            font-family: monospace;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+            -webkit-text-stroke: 0.5px #000;
+            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            text-align: right;
+            width: 100px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cd-circle-svg {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .cd-circle-text {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: monospace;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+            -webkit-text-stroke: 0.5px #000;
+            text-shadow: -1px -1px 0 #000, 1px 1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+            pointer-events: none;
+            white-space: nowrap;
+        }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
     <script src="Clases/config.js"></script>
@@ -28,9 +90,7 @@
     <script src="Clases/game.js"></script>
 </head>
 <body>
-    <script>
-        const gameobject = new Game();
-    </script>
+    <script>const gameobject = new Game();</script>
 
     <!-- ── Menú principal ──────────────────────────────────────────────── -->
     <div id="menu-screen" style="
@@ -58,90 +118,112 @@
         </div>
     </div>
 
-    <!-- ── Barra de población (Plague Inc style) ───────────────────────── -->
+    <!-- ── HUD izquierda: salud + XP ───────────────────────────────────── -->
+    <div id="hud-left" style="
+        display:none; position:fixed; top:20px; left:20px;
+        flex-direction:column; gap:8px;
+        z-index:10; pointer-events:none;
+    ">
+        <div class="hud-bar-wrap">
+            <div id="label-health" class="hud-bar-label">HEALTHY</div>
+            <div class="hud-bar-track" style="width:300px;height:20px;">
+                <div id="health-bar" class="hud-bar-fill" style="width:100%;background:#4caf50;"></div>
+            </div>
+        </div>
+        <div class="hud-bar-wrap">
+            <div id="label-xp" class="hud-bar-label">XP</div>
+            <div class="hud-bar-track" style="width:260px;height:12px;">
+                <div id="xp-bar" class="hud-bar-fill" style="width:0%;background:#1b5e20;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── HUD derecha: cooldowns ───────────────────────────────────────── -->
+    <div id="hud-right" style="
+        display:none; position:fixed; top:20px; right:20px;
+        flex-direction:column; gap:12px; align-items:flex-end;
+        z-index:10; pointer-events:none;
+    ">
+        <div class="cd-circle-wrap">
+            <div id="label-lmb-ability" class="cd-circle-label">—</div>
+            <div class="cd-circle-svg">
+                <svg id="svg-lmb" width="120" height="120" style="transform:rotate(-90deg);">
+                    <circle cx="60" cy="60" r="50" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                    <circle id="arc-lmb" cx="60" cy="60" r="50" fill="none" stroke="#ffee00" stroke-width="8" stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"/>
+                </svg>
+                <div id="label-lmb-center" class="cd-circle-text">LMB</div>
+            </div>
+        </div>
+        <div class="cd-circle-wrap">
+            <div id="label-rmb-ability" class="cd-circle-label">—</div>
+            <div class="cd-circle-svg">
+                <svg id="svg-rmb" width="120" height="120" style="transform:rotate(-90deg);">
+                    <circle cx="60" cy="60" r="50" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                    <circle id="arc-rmb" cx="60" cy="60" r="50" fill="none" stroke="#00e676" stroke-width="8" stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"/>
+                </svg>
+                <div id="label-rmb-center" class="cd-circle-text">RMB</div>
+            </div>
+        </div>
+        <div class="cd-circle-wrap">
+            <div id="label-dash-ability" class="cd-circle-label">DASH</div>
+            <div class="cd-circle-svg">
+                <svg id="svg-dash" width="120" height="120" style="transform:rotate(-90deg);">
+                    <circle cx="60" cy="60" r="50" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                    <circle id="arc-dash" cx="60" cy="60" r="50" fill="none" stroke="#ffb74d" stroke-width="8" stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"/>
+                </svg>
+                <div id="label-dash-center" class="cd-circle-text">DASH</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Barra central de población ──────────────────────────────────── -->
     <div id="population-bar-wrap" style="
         display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
         z-index:20; pointer-events:none;
+        background:transparent;
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:10px;
+        padding:6px 14px 8px;
+        flex-direction:column;
+        align-items:center;
+        gap:4px;
+        min-width:600px;
+    ">
+        <div style="display:flex;justify-content:space-between;width:100%;font-family:monospace;font-size:30px;letter-spacing:2px;">
+            <span id="pop-count-humans"  style="color:#29b6f6;-webkit-text-stroke:0.5px #000;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">HUMANS 0</span>
+            <span id="pop-count-zombies" style="color:#2e7d32;-webkit-text-stroke:0.5px #000;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">ZOMBIES 0</span>
+            <span id="pop-count-forces"  style="color:#ffb74d;-webkit-text-stroke:0.5px #000;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">FORCES 0</span>
+        </div>
+        <div style="width:100%;height:10px;border-radius:5px;overflow:hidden;display:flex;background:#000000;">
+            <div id="pop-humans"  style="height:100%;background:#29b6f6;transition:width 0.4s;width:100%;"></div>
+            <div id="pop-zombies" style="height:100%;background:#2e7d32;transition:width 0.4s;width:0%;"></div>
+            <div id="pop-forces"  style="height:100%;background:#591a7e;transition:width 0.4s;width:0%;"></div>
+        </div>
+    </div>
+
+    <!-- ── Timer de inicio ──────────────────────────────────────────────── -->
+    <div id="start-timer" style="
+        display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
+        font-family:monospace; font-size:22px; font-weight:bold;
+        color:#fff; letter-spacing:3px;
+        -webkit-text-stroke:0.5px #000;
+        text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
+        z-index:30; pointer-events:none;
         background:rgba(0,0,0,0.55);
         border:1px solid rgba(255,255,255,0.15);
         border-radius:10px;
-        padding:6px 12px;
-        display:none;
-        flex-direction:column;
-        align-items:center;
-        gap:5px;
-        min-width:320px;
-    ">
-        <!-- Número total + etiquetas -->
-        <div style="display:flex;justify-content:space-between;width:100%;font-family:monospace;font-size:9px;letter-spacing:1px;color:rgba(255,255,255,0.5);">
-            <span id="pop-total" style="font-size:11px;color:#fff;font-weight:bold;letter-spacing:2px;">0</span>
-            <div style="display:flex;gap:10px;">
-                <span style="color:#4caf50;">■ HUMANS</span>
-                <span style="color:#69f0ae;">■ ZOMBIES</span>
-                <span style="color:#ffb74d;">■ FORCES</span>
-            </div>
-        </div>
-        <!-- Barra -->
-        <div style="
-            width:100%; height:10px;
-            border-radius:5px; overflow:hidden;
-            display:flex; background:#1a1a1a;
-        ">
-            <div id="pop-humans"  style="height:100%;background:#4caf50;transition:width 0.4s;width:100%;"></div>
-            <div id="pop-zombies" style="height:100%;background:#69f0ae;transition:width 0.4s;width:0%;"></div>
-            <div id="pop-forces"  style="height:100%;background:#ffb74d;transition:width 0.4s;width:0%;"></div>
-        </div>
-    </div>
+        padding:6px 20px;
+    ">TRANSFORMING IN: 15s</div>
 
-    <!-- ── HUD: barras de cooldown (top-right) ─────────────────────────── -->
-    <div id="cooldown-bars" style="
-        position:fixed; top:20px; right:20px;
-        display:none; gap:16px; align-items:flex-end;
-        z-index:10; pointer-events:none;
-    ">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-family:monospace;font-size:10px;font-weight:bold;color:#fff;letter-spacing:2px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">HP</div>
-            <div style="width:14px;height:60px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;">
-                <div id="health-bar" style="width:100%;height:100%;background:#4caf50;border-radius:6px;transition:height 0.1s,background 0.3s;"></div>
-            </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-family:monospace;font-size:10px;color:#fff;letter-spacing:1px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">DASH</div>
-            <div style="width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;overflow:hidden;">
-                <div id="cd-dash" style="width:100%;height:100%;background:#ffb74d;transition:height 0.05s;"></div>
-            </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-family:monospace;font-size:10px;color:#fff;letter-spacing:1px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">LMB</div>
-            <div style="width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;overflow:hidden;">
-                <div id="cd-lmb" style="width:100%;height:100%;background:#69f0ae;transition:height 0.05s;"></div>
-            </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;">
-            <div style="font-family:monospace;font-size:10px;color:#fff;letter-spacing:1px;text-shadow:-1px -1px 0 #000,1px 1px 0 #000;">RMB</div>
-            <div style="width:60px;height:60px;border:2px solid rgba(255,255,255,0.3);border-radius:8px;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;overflow:hidden;">
-                <div id="cd-shot" style="width:100%;height:100%;background:#69f0ae;transition:height 0.05s;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ── HUD: info de waves (top-left) ───────────────────────────────── -->
+    <!-- ── Info de waves ───────────────────────────────────────────────── -->
     <div id="wave-counter" style="
         display:none; position:fixed; top:20px; left:20px;
         font-family:monospace; font-size:14px; font-weight:bold;
         color:#fff; letter-spacing:2px;
+        -webkit-text-stroke:0.5px #000;
         text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
         z-index:10; pointer-events:none;
     ">WAVE 1/9</div>
-
-    <!-- ── Timer de inicio (centrado arriba) ───────────────────────────── -->
-    <div id="start-timer" style="
-        display:none; position:fixed; top:20px; left:50%; transform:translateX(-50%);
-        font-family:monospace; font-size:22px; font-weight:bold;
-        color:#fff; letter-spacing:3px;
-        text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
-        z-index:10; pointer-events:none;
-    ">TRANSFORMING IN: 15s</div>
 
     <!-- ── Pantallas de estado ──────────────────────────────────────────── -->
     <div id="death-screen" style="
@@ -179,9 +261,8 @@
     <!-- ── Scripts ─────────────────────────────────────────────────────── -->
     <script>
         function startGame(mode) {
-            document.getElementById('menu-screen').style.display      = 'none';
-            document.getElementById('start-timer').style.display      = 'block';
-            document.getElementById('population-bar-wrap').style.display = 'flex';
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('start-timer').style.display = 'block';
             Game.instance._gameMode = mode;
             if (mode === 'waves') {
                 document.getElementById('wave-counter').style.display = 'block';
@@ -194,6 +275,44 @@
         }
 
         function volverAlMenu() { location.reload(); }
+
+        function initCirculos() {
+            const r      = Config.hudCooldownRadius;
+            const size   = r * 2;
+            const rInner = r * 0.83;
+            const circ   = +(2 * Math.PI * rInner).toFixed(2);
+
+            ['lmb', 'rmb', 'dash'].forEach(id => {
+                const svg = document.getElementById('svg-' + id);
+                if (!svg) return;
+                svg.setAttribute('width',  size);
+                svg.setAttribute('height', size);
+                svg.querySelectorAll('circle').forEach(c => {
+                    c.setAttribute('cx', r);
+                    c.setAttribute('cy', r);
+                    c.setAttribute('r',  rInner);
+                });
+                const arc = document.getElementById('arc-' + id);
+                if (arc) {
+                    arc.setAttribute('stroke-dasharray',  circ);
+                    arc.setAttribute('stroke-dashoffset', circ);
+                }
+            });
+
+            // Fuente desde config
+            const fs     = Config.hudFontSize + 'px';
+            const fsLarge = Config.hudFontSizeLarge + 'px';
+            document.querySelectorAll('.hud-bar-label').forEach(el => el.style.fontSize = fs);
+            document.querySelectorAll('.cd-circle-label').forEach(el => el.style.fontSize = fsLarge);
+            document.querySelectorAll('.cd-circle-text').forEach(el => el.style.fontSize = fs);
+
+            // Ancho de barras desde config
+            const hw = Config.hudBarWidth + 'px';
+            const htrack = document.querySelector('#hud-left .hud-bar-track');
+            if (htrack) htrack.style.width = hw;
+        }
+
+        window.addEventListener('load', () => setTimeout(initCirculos, 100));
     </script>
 </body>
 </html>

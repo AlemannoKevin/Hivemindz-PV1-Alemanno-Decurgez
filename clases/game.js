@@ -180,8 +180,8 @@ class Game {
         if (!this.player.isZombie) {
             this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
             this._startTimerOn = false;
-            const timerEl = document.getElementById('start-timer');
-            if (timerEl) timerEl.style.display = 'none';
+            document.getElementById('start-timer').style.display          = 'none';
+            document.getElementById('population-bar-wrap').style.display  = 'flex';
             return;
         }
         if (this.player._bulletCooldown > 0 || this.player._comeTogether || this._rmbUpgrade === 'necrotic') return;
@@ -252,11 +252,12 @@ class Game {
         this._startTimer -= delta;
         const el   = document.getElementById('start-timer');
         if (el) el.textContent = `TRANSFORMING IN: ${Math.ceil(this._startTimer / 60)}s`;
-        if (this._startTimer <= 0) {
-            this._startTimerOn = false;
-            if (el) el.style.display = 'none';
-            if (!this.player.isZombie) this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
-        }
+            if (this._startTimer <= 0) {
+                this._startTimerOn = false;
+                if (el) el.style.display = 'none';
+                document.getElementById('population-bar-wrap').style.display = 'flex';
+                if (!this.player.isZombie) this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+            }
     }
 
     _tickLMB(delta) {
@@ -342,39 +343,126 @@ class Game {
             if (z._dead && !z._bioBall) { this.worldContainer.removeChild(z.container); this.zombies.splice(i, 1); }
         }
     }
-
     _tickHUD(delta) {
+        // ── Barra de población ────────────────────────────────────────────
         const numHumans  = this.humans.filter(h => !h._infected).length;
         const numZombies = this.zombies.length;
         const numForces  = this.policia.length;
         const total      = numHumans + numZombies + numForces;
 
-        const pHumans  = document.getElementById('pop-humans');
-        const pZombies = document.getElementById('pop-zombies');
-        const pForces  = document.getElementById('pop-forces');
-        const pTotal   = document.getElementById('pop-total');
-
-        if (pHumans && total > 0) {
-            pHumans.style.width  = (numHumans  / total * 100) + '%';
-            pZombies.style.width = (numZombies / total * 100) + '%';
-            pForces.style.width  = (numForces  / total * 100) + '%';
+        if (total > 0) {
+            document.getElementById('pop-humans').style.width  = (numHumans  / total * 100) + '%';
+            document.getElementById('pop-zombies').style.width = (numZombies / total * 100) + '%';
+            document.getElementById('pop-forces').style.width  = (numForces  / total * 100) + '%';
         }
-        if (pTotal) pTotal.textContent = total;
+        document.getElementById('pop-count-humans').textContent  = Config.labelPopHumans  + ' ' + numHumans;
+        document.getElementById('pop-count-zombies').textContent = Config.labelPopZombies + ' ' + numZombies;
+        document.getElementById('pop-count-forces').textContent  = Config.labelPopForces  + ' ' + numForces;
+
+        // ── Colores desde config ──────────────────────────────────────────
+        document.getElementById('pop-humans').style.background  = Config.colorPopHumans;
+        document.getElementById('pop-zombies').style.background = Config.colorPopZombies;
+        document.getElementById('pop-forces').style.background  = Config.colorPopForces;
+        document.getElementById('pop-count-humans').style.color  = Config.colorPopHumans;
+        document.getElementById('pop-count-zombies').style.color = Config.colorPopZombies;
+        document.getElementById('pop-count-forces').style.color  = Config.colorPopForces;
+
+        // ── Labels desde config ───────────────────────────────────────────
+        document.getElementById('label-health').textContent = Config.labelHealth;
+        document.getElementById('label-xp').textContent     = Config.labelXP;
+
+        // ── XP bar ────────────────────────────────────────────────────────
+        const infected   = this.humans.filter(h => h._infected).length;
+        const xpLevels   = [Config.xpLevel1, Config.xpLevel2, Config.xpLevel3];
+        const xpCurrent  = xpLevels[Math.min(this._upgradeCount, xpLevels.length - 1)];
+        const xpPrev     = this._upgradeCount === 0 ? 0
+                         : this._upgradeCount === 1 ? Config.xpLevel1
+                         : Config.xpLevel2;
+        const xpPct      = this._upgradeCount >= xpLevels.length ? 100
+                         : Math.min(100, ((infected - xpPrev) / (xpCurrent - xpPrev)) * 100);
+
+        const xpBar = document.getElementById('xp-bar');
+        if (xpBar) {
+            xpBar.style.width      = Math.max(0, xpPct) + '%';
+            xpBar.style.background = Config.colorXPBar;
+        }
+
+        // ── Circles cooldown ──────────────────────────────────────────────
+        this._actualizarCirculos();
 
         if (this._waveMode) {
+            const counter = document.getElementById('wave-counter');
+            if (counter) counter.textContent =
+                `WAVE ${this._waveNumber}/${Config.waveTotalWaves} — ${Math.ceil(this._waveTimer / 60)}s`;
             return;
         }
 
-        // Modo normal: upgrades y victoria
-        const aliveHumans = numHumans;
+        // ── Modo normal: upgrades y victoria ─────────────────────────────
+        const thresholds = [Config.xpLevel1, Config.xpLevel2, Config.xpLevel3];
         if (this.player.isZombie && !this._paused) {
-            const thresholds = [300, 200, 100];
-            if (this._upgradeCount < thresholds.length && aliveHumans <= thresholds[this._upgradeCount]) {
+            if (this._upgradeCount < thresholds.length && infected >= thresholds[this._upgradeCount]) {
                 this._upgradeCount++;
                 this._mostrarUpgrade();
             }
         }
         if (this.player.isZombie && this.humans.every(h => h._infected)) this._mostrarVictoria();
+    }
+
+    _actualizarCirculos() {
+        const r          = 50;
+        const circum     = 2 * Math.PI * r; // 314.16
+
+        // ── LMB ──────────────────────────────────────────────────────────
+        const arcLMB   = document.getElementById('arc-lmb');
+        const lblLMB   = document.getElementById('label-lmb-ability');
+        const lblLMBc  = document.getElementById('label-lmb-center');
+        if (arcLMB) {
+            arcLMB.style.stroke = Config.colorLMB;
+            let pctLMB = 1;
+            if (!this._lmbUpgrade) {
+                // Overheat básico
+                if (this._lmbOnCooldown) {
+                    pctLMB = 1 - (this._lmbCooldownTimer / Config.lmbOverheatCooldown);
+                } else {
+                    pctLMB = this._lmbOverheat / Config.lmbOverheatMax;
+                }
+            } else if (this._lmbUpgrade === 'biomass') {
+                pctLMB = this._bioCD > 0 ? 1 - (this._bioCD / Config.bioCooldown) : 1;
+            } else if (this._lmbUpgrade === 'combustion') {
+                pctLMB = this._combustionCD > 0 ? 1 - (this._combustionCD / Config.combustionCooldown) : 1;
+            } else if (this._lmbUpgrade === 'cometogether') {
+                const cdMax = Config.comeTogetherDuration * 2;
+                pctLMB = this._comeTogetherCD > 0 ? 1 - (this._comeTogetherCD / cdMax) : 1;
+            }
+            arcLMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctLMB)))).toFixed(2);
+            if (lblLMB) lblLMB.textContent = this._lmbUpgrade
+                ? (HABILIDADES.find(h => h.id === this._lmbUpgrade)?.nombre || Config.labelLMB)
+                : Config.labelLMB;
+            if (lblLMBc) lblLMBc.textContent = Config.labelLMB;
+        }
+
+        // ── RMB ──────────────────────────────────────────────────────────
+        const arcRMB  = document.getElementById('arc-rmb');
+        const lblRMB  = document.getElementById('label-rmb-ability');
+        const lblRMBc = document.getElementById('label-rmb-center');
+        if (arcRMB) {
+            arcRMB.style.stroke = Config.colorRMB;
+            let pctRMB = 1;
+            if (this._rmbUpgrade === 'necrotic') {
+                pctRMB = 1; // siempre lleno
+            } else if (this.player._bulletCooldown > 0) {
+                const shotMax = this._rmbUpgrade === 'dagger' ? Config.daggerCooldown : Config.playerBulletCooldown;
+                pctRMB = 1 - (this.player._bulletCooldown / shotMax);
+            }
+            arcRMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctRMB)))).toFixed(2);
+            if (lblRMB) lblRMB.textContent = this._rmbUpgrade
+                ? (HABILIDADES.find(h => h.id === this._rmbUpgrade)?.nombre || Config.labelRMB)
+                : Config.labelRMB;
+            if (lblRMBc) lblRMBc.textContent = Config.labelRMB;
+        }
+
+        const lblDash = document.getElementById('label-dash-ability');
+        if (lblDash) lblDash.textContent = Config.labelDash;
     }
 
     _tickRMBAbilities(delta) {
@@ -486,15 +574,32 @@ class Game {
     }
 
     // ── Combustion ────────────────────────────────────────────────────────
+
     _tickCombustion(delta) {
         if (this._combustionCD > 0) this._combustionCD -= delta;
         if (!this._combustionClick) return;
+
+        // Solo consumimos el click si podemos actuar
+        if (this._combustionCD > 0 || (this._zombieProyectil && !this._zombieProyectil._muerto)) {
+            this._combustionClick = false;
+            return;
+        }
+
         this._combustionClick = false;
-        if (this._combustionCD > 0 || (this._zombieProyectil && !this._zombieProyectil._muerto)) return;
 
         const masCorto = this.zombies
-            .filter(z => !z._dead)
-            .redu
+            .filter(z => !z._dead && !z._bioBall && !z._comeTogether)
+            .reduce((best, z) => {
+                const d = Utils.distance(this.player.x, this.player.y, z.x, z.y);
+                return d < Config.combustionPickRange && (!best || d < best.d) ? { z, d } : best;
+            }, null)?.z;
+
+        if (!masCorto) return;
+        this._combustionCD = Config.combustionCooldown;
+        const mx  = Mouse.worldX(this.camera.offsetX);
+        const my  = Mouse.worldY(this.camera.offsetY);
+        const dir = Utils.normalize(mx - this.player.x, my - this.player.y);
+        this._zombieProyectil = new ZombieProyectil(masCorto, dir.x, dir.y, this.worldContainer);
     }
 
     _tickWaves(delta) {

@@ -47,25 +47,36 @@ class Zombie extends GameObject {
 
     _actualizarContorno(activo) {
         if (!this.sprite) return;
-        if (activo && !this._contornoActivo) {
-            this._contornoActivo = true;
-            this.sprite.tint = 0x88bbff;
+        if (activo) {
+            if (!this._contornoActivo) {
+                this._contornoActivo = true;
+            }
+            // No sobreescribimos si tiene boost rojo activo
+            if (!(this._ctBoostTimer > 0)) {
+                this.sprite.tint = 0xffee88; // amarillo claro configurable
+            }
         } else if (!activo && this._contornoActivo) {
             this._contornoActivo = false;
-            this.sprite.tint = 0xffffff;
+            // Solo restauramos si no tiene boost activo
+            if (!(this._ctBoostTimer > 0)) {
+                this.sprite.tint = 0xffffff;
+            }
         }
     }
 
     // ── Boost de Come Together ────────────────────────────────────────────
+
     _tickCTBoost(deltaTime) {
         if (this._ctBoostTimer <= 0) return;
         this._ctBoostTimer -= deltaTime;
         if (this._ctBoostTimer <= 0) {
-            if (this.sprite) this.sprite.tint = 0xffffff;
             this._ctReducedAttackCD = false;
+            if (this.sprite) {
+                // Si sigue siendo controlado por LMB, volvemos a amarillo
+                this.sprite.tint = this._contornoActivo ? 0xffee88 : 0xffffff;
+            }
         }
     }
-
     _speedMultiplier() {
         const slow        = this._slowTimer > 0 ? Config.brawlerSlowFactor : 1;
         const orbitBoost  = Game.instance?._lmbUpgrade === 'orbit' ? Config.orbitSpeedBoost : 1;
@@ -177,10 +188,13 @@ class Zombie extends GameObject {
         if (this._comeTogether) { this._setAnimation('move', true); return; }
 
         // Biomass: resistencia al push
-        if (this._bioBall) { this._pushVx *= Config.bioPushResist; this._pushVy *= Config.bioPushResist; }
-
-        this._actualizarContorno(false);
-
+        if (this._bioBall) {
+            this._pushVx *= Config.bioPushResist;
+            this._pushVy *= Config.bioPushResist;
+            this._actualizarContorno(true);
+        } else {
+            this._actualizarContorno(false);
+        }
         // Separación (el central la ignora)
         if (!this._bioCentral) {
             for (const other of allZombies) {
