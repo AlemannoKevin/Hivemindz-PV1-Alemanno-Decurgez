@@ -214,9 +214,11 @@ class Zombie extends GameObject {
 
         const boidsForce    = Boids.computeSteering(this, allZombies, { separationWeight: 0, alignmentWeight: 0.5, cohesionWeight: 0.7 });
         const obstacleForce = Utils.repelFromObstacles(this.x, this.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+        const borderForce   = Utils.repelFromBorders(this.x, this.y, Config.borderRepelMargin, Config.borderRepelForce);
 
         const direction = Boids.blendWithGoal(
-            goalX + obstacleForce.x, goalY + obstacleForce.y,
+            goalX + obstacleForce.x + borderForce.x,
+            goalY + obstacleForce.y + borderForce.y,
             boidsForce.x, boidsForce.y, 0.65
         );
         this.headingX = direction.x;

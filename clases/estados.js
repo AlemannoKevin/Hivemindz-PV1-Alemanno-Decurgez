@@ -1,14 +1,15 @@
 // ── Helpers compartidos ───────────────────────────────────────────────────────
 
-function _moverConBoids(entity, allHumans, goalX, goalY, speed, deltaTime, context) {
+function _moverConBoids(entity, allHumans, goalX, goalY, speed, deltaTime, context, boidsCfg = {}) {
     const boidsForce = Boids.computeSteering(entity, allHumans, {
-        separationWeight: 0,
-        alignmentWeight:  0.7,
-        cohesionWeight:   0.6,
+        separationWeight: boidsCfg.sep ?? 0,
+        alignmentWeight:  boidsCfg.ali ?? 0.5,
+        cohesionWeight:   boidsCfg.coh ?? 0.3,
     });
-    const obs = Utils.repelFromObstacles(entity.x, entity.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
-    goalX += obs.x;
-    goalY += obs.y;
+    const obs    = Utils.repelFromObstacles(entity.x, entity.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+    const border = Utils.repelFromBorders(entity.x, entity.y, Config.borderRepelMargin, Config.borderRepelForce);
+    goalX += obs.x + border.x;
+    goalY += obs.y + border.y;
     const dir = Boids.blendWithGoal(goalX, goalY, boidsForce.x, boidsForce.y, 0.45);
     entity.headingX = dir.x;
     entity.headingY = dir.y;
@@ -56,7 +57,7 @@ function _getSpeedMults(entity) {
 
 // ── Humano: Wander ────────────────────────────────────────────────────────────
 
-class HumanoWanderState {
+ class HumanoWanderState {
     enter(humano) {
         humano.exclamation.visible = false;
         humano.sprite.tint = 0xffffff;
@@ -65,13 +66,17 @@ class HumanoWanderState {
     update(humano, context) {
         const { allHumans, player, allZombies, deltaTime } = context;
 
-        // Transición a huida
-        const threat = player.isZombie && Utils.distance(humano.x, humano.y, player.x, player.y) < Config.humanFleeRange
-            || allZombies.some(z => Utils.distance(humano.x, humano.y, z.x, z.y) < Config.humanFleeRange);
+        const threat = (player.isZombie &&
+            Utils.distance(humano.x, humano.y, player.x, player.y) < Config.humanFleeRange)
+            || allZombies.some(z =>
+                Utils.distance(humano.x, humano.y, z.x, z.y) < Config.humanFleeRange);
         if (threat) { humano.setState(new HumanoFleeState()); return; }
 
         _actualizarWander(humano, deltaTime);
-        _moverConBoids(humano, allHumans, humano._wanderDirX, humano._wanderDirY, Config.humanWalkSpeed, deltaTime, context);
+        _moverConBoids(humano, allHumans,
+            humano._wanderDirX, humano._wanderDirY,
+            Config.humanWalkSpeed, deltaTime, context,
+            { sep: 0, ali: 0.5, coh: 0.3 });
     }
 
     exit(humano) {}
@@ -102,7 +107,7 @@ class HumanoFleeState {
         }
 
         const awayAngle = Utils.angleTo(threatX, threatY, humano.x, humano.y);
-        _moverConBoids(humano, allHumans, Math.cos(awayAngle), Math.sin(awayAngle), Config.humanFleeSpeed, deltaTime, context);
+        _moverConBoids(humano, allHumans, Math.cos(awayAngle), Math.sin(awayAngle), Config.humanFleeSpeed, deltaTime, context, { sep: 0, ali: 1.0, coh: 0.1 });
     }
 
     exit(humano) {
@@ -145,9 +150,10 @@ class PoliciaWanderState {
             _actualizarWander(policia, deltaTime);
         }
 
-        const obs = Utils.repelFromObstacles(policia.x, policia.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
-        policia.x += obs.x;
-        policia.y += obs.y;
+        const obs    = Utils.repelFromObstacles(policia.x, policia.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+        const border = Utils.repelFromBorders(policia.x, policia.y, Config.borderRepelMargin, Config.borderRepelForce);
+        policia.x += obs.x + border.x;
+        policia.y += obs.y + border.y;
 
         const { pitMult, necroMult } = _getSpeedMults(policia);
         policia.x += policia._wanderDirX * Config.policiaSpeed * deltaTime * pitMult * necroMult;
@@ -199,9 +205,10 @@ class PoliciaCombatState {
         if (Math.abs(diff) > 20) {
             const angle = Utils.angleTo(policia.x, policia.y, nearestTarget.x, nearestTarget.y);
             const dir   = diff > 0 ? 1 : -1;
-            const obs   = Utils.repelFromObstacles(policia.x, policia.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
-            policia.x  += obs.x;
-            policia.y  += obs.y;
+        const obs    = Utils.repelFromObstacles(policia.x, policia.y, Config.obstacleRepelRadius, Config.obstacleRepelForce);
+        const border = Utils.repelFromBorders(policia.x, policia.y, Config.borderRepelMargin, Config.borderRepelForce);
+        policia.x += obs.x + border.x;
+        policia.y += obs.y + border.y;
             const { pitMult, necroMult } = _getSpeedMults(policia);
             policia.x  += Math.cos(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;
             policia.y  += Math.sin(angle) * dir * Config.policiaSpeed * deltaTime * pitMult * necroMult;

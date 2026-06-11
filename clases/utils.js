@@ -54,4 +54,16 @@ const Utils = {
         }
         return { x: totalX, y: totalY };
     },
+    
+    repelFromBorders(entityX, entityY, margin, force) {
+        let fx = 0, fy = 0;
+        const w = Config.worldWidth, h = Config.worldHeight;
+
+        if (entityX < margin)     fx += (margin - entityX) / margin * force;
+        if (entityX > w - margin) fx -= (entityX - (w - margin)) / margin * force;
+        if (entityY < margin)     fy += (margin - entityY) / margin * force;
+        if (entityY > h - margin) fy -= (entityY - (h - margin)) / margin * force;
+
+        return { x: fx, y: fy };
+    },
 };

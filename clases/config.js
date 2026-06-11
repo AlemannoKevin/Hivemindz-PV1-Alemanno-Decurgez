@@ -7,6 +7,8 @@ const Config = {
     zoomMin:     0.8,
     zoomMax:     2,
     zoomSpeed:   0.1,
+    borderRepelMargin: 180,   // grosor del borde invisible en px
+    borderRepelForce:  3.5,   // fuerza de repulsión del borde
 
     // ── Obstáculos ────────────────────────────────────────────────────────
     obstacleHitboxSize:  80,
@@ -31,9 +33,9 @@ const Config = {
 
     // ── Boids ─────────────────────────────────────────────────────────────
     boidsSepRadius:    50,
-    boidsAliRadius:    100,
-    boidsCohRadius:    120,
-    boidsMaxNeighbors: 25,
+    boidsAliRadius:    80,
+    boidsCohRadius:    90,
+    boidsMaxNeighbors: 20,
 
     // ── Jugador ───────────────────────────────────────────────────────────
     playerMaxHealth:     12,
