@@ -1,17 +1,17 @@
 // ── Registro de habilidades ───────────────────────────────────────────────────
 const HABILIDADES = [
     { id: 'cometogether', tipo: 'lmb', nombre: 'Come Together',
-      desc: 'Zombies te rodean por unos segundos, antes de explotar y desparramarlos por la zona con buffs. Eres invulnerable durante la habilidad.' },
+      desc: 'Zombies te rodean por unos segundos, antes de empujarlos y desparramarlos alrededor tuyo con buffs. Eres invulnerable durante la canalización.' },
     { id: 'biomass',      tipo: 'lmb', nombre: 'Biomass Collapse',
-      desc: 'Hasta 15 zombies cercanos colapsan en una bola. La masa persigue enemigos con mayor velocidad y resistencia al empuje.' },
+      desc: 'Zombies cercanos colapsan en una bola. La bio-masa persigue enemigos con mayor velocidad y resistencia al empuje.' },
     { id: 'combustion',   tipo: 'lmb', nombre: 'Kick-Start Combustion',
-      desc: 'Patea un zombie cercano hacia el cursor. Al impactar explota infectando/dañando todo lo que toca.' },
+      desc: 'Patea y empuja un zombie cercano, iniciando el proceso de combustión. Al impactar explota, infectando/dañando todo en una zona.' },
     { id: 'necrotic',     tipo: 'rmb', nombre: 'Necrotic Pulses',
-      desc: 'Pulsos automáticos alrededor del jugador. Infecta y ralentiza. El jugador se ralentiza pero el cooldown del dash baja al 50%.' },
+      desc: 'Al activarlo, pulsos de daño rodean al jugador. Infecta y ralentiza humanos y enemigos. El jugador es mucho más lento, pero a cambio el dash tiene bajo cooldown.' },
     { id: 'dagger',       tipo: 'rmb', nombre: 'Putrified Daggers',
-      desc: 'Burst de 3 proyectiles. Requiere 3 impactos para infectar. +50% daño a enemigos.' },
+      desc: 'Burst de 3 proyectiles. Requiere varios impactos para infectar. Mayor daño a enemigos.' },
     { id: 'pit',          tipo: 'rmb', nombre: 'Poisonous Pit',
-      desc: 'Proyectil que deja un charco venenoso. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.' },
+      desc: 'Proyectil que deja un charco venenoso al impactar humano/enemigo. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.' },
 ];
 
 function elegirHabilidades(yaElegidas) {
@@ -130,6 +130,7 @@ class ZombieProyectil {
         this._muerto = false;
 
         zombie.container.visible = false;
+        zombie._actualizarContorno?.(true);
 
         this.container = new PIXI.Container();
         this.container.x = this.x;
@@ -166,6 +167,7 @@ class ZombieProyectil {
     _explotar(allHumans, allPolicia, zombies, worldContainer) {
         this._muerto       = true;
         this._zombie._dead = true;
+        this._zombie._actualizarContorno?.(false);
         worldContainer.removeChild(this.container);
 
         _aplicarAUnidades(allHumans, allPolicia, this.x, this.y, Config.combustionRadius,

@@ -76,7 +76,7 @@ function _getSpeedMults(entity) {
         _moverConBoids(humano, allHumans,
             humano._wanderDirX, humano._wanderDirY,
             Config.humanWalkSpeed, deltaTime, context,
-            { sep: 0, ali: 0.5, coh: 0.3 });
+            { sep: 0, ali: Config.boidsHumanWanderAli, coh: Config.boidsHumanWanderCoh });
     }
 
     exit(humano) {}
@@ -107,7 +107,9 @@ class HumanoFleeState {
         }
 
         const awayAngle = Utils.angleTo(threatX, threatY, humano.x, humano.y);
-        _moverConBoids(humano, allHumans, Math.cos(awayAngle), Math.sin(awayAngle), Config.humanFleeSpeed, deltaTime, context, { sep: 0, ali: 1.0, coh: 0.1 });
+        _moverConBoids(humano, allHumans, Math.cos(awayAngle), Math.sin(awayAngle),
+            Config.humanFleeSpeed, deltaTime, context,
+            { sep: 0, ali: Config.boidsHumanFleeAli, coh: Config.boidsHumanFleeCoh });
     }
 
     exit(humano) {
@@ -247,7 +249,9 @@ class PeleadorWanderState {
     update(peleador, context) {
         const { allHumans, deltaTime } = context;
         _actualizarWander(peleador, deltaTime);
-        _moverConBoids(peleador, allHumans, peleador._wanderDirX, peleador._wanderDirY, Config.humanWalkSpeed, deltaTime, context);
+        _moverConBoids(peleador, allHumans, peleador._wanderDirX, peleador._wanderDirY,
+            Config.humanWalkSpeed, deltaTime, context,
+            { sep: 0, ali: Config.boidsHumanWanderAli, coh: Config.boidsHumanWanderCoh });
     }
 
     exit(peleador) {}
@@ -340,7 +344,9 @@ class PeleadorAttackState {
         peleador._batTimer   -= deltaTime;
         if (peleador._batTimer <= 0) { peleador.setState(new PeleadorWanderState()); return; }
         _actualizarWander(peleador, deltaTime);
-        _moverConBoids(peleador, allHumans, peleador._wanderDirX, peleador._wanderDirY, Config.humanWalkSpeed, deltaTime, context);
+        _moverConBoids(peleador, allHumans, peleador._wanderDirX, peleador._wanderDirY,
+            Config.humanWalkSpeed, deltaTime, context,
+            { sep: 0, ali: Config.boidsHumanWanderAli, coh: Config.boidsHumanWanderCoh });
     }
 
     exit(peleador) {}

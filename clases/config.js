@@ -7,8 +7,8 @@ const Config = {
     zoomMin:     0.8,
     zoomMax:     2,
     zoomSpeed:   0.1,
-    borderRepelMargin: 180,   // grosor del borde invisible en px
-    borderRepelForce:  3.5,   // fuerza de repulsión del borde
+    borderRepelMargin: 200,   // grosor del borde invisible en px
+    borderRepelForce:  7,   // fuerza de repulsión del borde
 
     // ── Obstáculos ────────────────────────────────────────────────────────
     obstacleHitboxSize:  80,
@@ -18,15 +18,15 @@ const Config = {
     // ── Humanos ───────────────────────────────────────────────────────────
     humanCount:      325,
     humanWalkSpeed:  0.8,
-    humanFleeSpeed:  1.8,
-    humanFleeRange:  180,
+    humanFleeSpeed:  1.75,
+    humanFleeRange:  170,
     humanFleeFrames: 240,
 
     // ── Peleador ──────────────────────────────────────────────────────────
     brawlerRatio:        0.15,
     brawlerBatRange:     90,
-    brawlerBatForce:     40,
-    brawlerBatCooldown:  70,
+    brawlerBatForce:     35,
+    brawlerBatCooldown:  75,
     brawlerSlowDuration: 75,
     brawlerSlowFactor:   0.5,
     brawlerInfectHits:   2,
@@ -36,53 +36,57 @@ const Config = {
     boidsAliRadius:    80,
     boidsCohRadius:    90,
     boidsMaxNeighbors: 20,
+    boidsHumanWanderAli:  0.6,
+    boidsHumanWanderCoh:  0.40,
+    boidsHumanFleeAli:    1.2,
+    boidsHumanFleeCoh:    0.15,
 
     // ── Jugador ───────────────────────────────────────────────────────────
-    playerMaxHealth:     12,
-    playerSpeed:         2.8,
-    aoeRadius:           125,
-    aoeFadeFrames:       30,
-    playerDashSpeed:     18,
-    playerDashDuration:  25,
-    playerDashCooldown:  150,
-    playerBulletSpeed:   3.5,
-    playerBulletCooldown: 110,
+    playerMaxHealth:      14,
+    playerSpeed:          2.8,
+    aoeRadius:            175,
+    aoeFadeFrames:        30,
+    playerDashSpeed:      18,
+    playerDashDuration:   25,
+    playerDashCooldown:   150,
+    playerBulletSpeed:    3.75,
+    playerBulletCooldown: 100,
 
     // ── Zombies ───────────────────────────────────────────────────────────
-    zombieSpeed:          1.6,
+    zombieSpeed:          1.5,
     zombieSeekRange:      325,
     zombieAttackRange:    35,
-    zombieAttackCooldown: 150,
+    zombieAttackCooldown: 175,
 
     // ── Policía ───────────────────────────────────────────────────────────
-    policiaCount:        40,
+    policiaCount:        50,
     policiaHits:         3,
-    policiaSpeed:        1.7,
-    policiaDetectRange:  225,
-    policiaShootRange:   225,
-    policiaShootCooldown: 90,
-    policiaBulletSpeed:  4,
-    policiaBulletDamage: 0.2,
-    policiaKnockback:    3,
+    policiaSpeed:        1.6,
+    policiaDetectRange:  200,
+    policiaShootRange:   200,
+    policiaShootCooldown: 80,
+    policiaBulletSpeed:  3.5,
+    policiaBulletDamage: 0.15,
+    policiaKnockback:    2.5,
     policiaFollowRange:  250,
     policiaIdealRange:   160,
 
     // ── SWAT ──────────────────────────────────────────────────────────────
-    swatRatio:        0.3,
+    swatRatio:        0.15,
     swatHits:         5,
     swatSpreadAngle:  0.3,
-    swatBulletDamage: 0.3,
+    swatBulletDamage: 0.2,
     swatKnockback:    45,
 
     // ── LMB básico (overheat) ─────────────────────────────────────────────
     lmbOverheatMax:      300,
     lmbOverheatCooldown: 360,
     lmbRechargeRate:     0.75,
-    lmbSpeedBoost:       1.8,
+    lmbSpeedBoost:       2,
     lmbMaxZombies:       20,
 
     // ── Habilidad: Biomass Collapse ───────────────────────────────────────
-    bioBallRadius:        70,
+    bioBallRadius:        75,
     bioZombieChaseSpeed:  4,
     bioCooldown:          600,
     bioDuration:          450,
@@ -98,10 +102,10 @@ const Config = {
     daggerSpreadAngle:   0.125,
 
     // ── Habilidad: Kick-Start Combustion ──────────────────────────────────
-    combustionRadius:    85,
-    combustionPushDist:  250,
+    combustionRadius:    100,
+    combustionPushDist:  275,
     combustionPushSpeed: 6,
-    combustionCooldown:  300,
+    combustionCooldown:  200,
     combustionPickRange: 120,
     combustionDamage:    0.5,
 
@@ -114,10 +118,10 @@ const Config = {
     pitEnemyDamage:      0.125,
 
     // ── Habilidad: Come Together ──────────────────────────────────────────
-    comeTogetherRadius:             55,
-    comeTogetherDuration:           190,
+    comeTogetherRadius:             60,
+    comeTogetherDuration:           225,
     comeTogetherForce:              115,
-    comeTogetherZombies:            30,
+    comeTogetherZombies:            40,
     comeTogetherSpeed:              2.4,
     comeTogetherBoostDuration:      200,
     comeTogetherSpeedBoost:         2.25,
@@ -126,20 +130,24 @@ const Config = {
 
     // ── Habilidad: Necrotic Pulses ────────────────────────────────────────
     necroticPulseInterval:    50,
-    necroticPulseRadius:      185,
-    necroticPulseInfectRate:  0.2,
-    necroticPulseEnemyDamage: 0.1,
+    necroticPulseRadius:      200,
+    necroticPulseInfectRate:  0.5,
+    necroticPulseEnemyDamage: 0.2,
     necroticPulseSlowFactor:  0.5,
     necroticPlayerSlow:       0.25,
+    necroticPushResist:       0.25,  // multiplicador de push recibido (75% menos)
+    necroticDmgMitig:         0.25,  // multiplicador de daño recibido (75% menos)
+    necroticSlowToggle:       0.4,  // multiplicador de velocidad cuando está ON
+    necroticDashRedux:        0.25,  // multiplicador de cooldown de dash cuando ON
 
     // ── Waves Mode ────────────────────────────────────────────────────────
     waveDuration:       1800,
     waveEnemyBase:      12,
-    waveEnemyGrowth:    0.025,
+    waveEnemyGrowth:    0.075,
     waveTotalWaves:     8,
-    waveHumanTarget:    250,
+    waveHumanTarget:    100,
     waveUpgradeEvery:   3600,
-    waveSwatRatio:      0.25,
+    waveSwatRatio:      0.3,
     
     // ── HUD: colores ──────────────────────────────────────────────────────
     colorLMB:             '#ffee00',  // amarillo brillante para todas las LMB
@@ -154,21 +162,23 @@ const Config = {
     colorPopForces:       '#0c3583',  // azul oscuro
 
     // ── HUD: textos ───────────────────────────────────────────────────────
-    labelHealth:          'HEALTH',
-    labelXP:              'XP',
-    labelLMB:             'LMB',
-    labelRMB:             'RMB',
-    labelDash:            'DASH',
-    labelPopHumans:       'HUMANS',
-    labelPopZombies:      'ZOMBIES',
-    labelPopForces:       'POLICE',
-    hudFontSize:          25,    // tamaño de fuente del HUD en px
-    hudFontSizeLarge:     25,    // tamaño para labels de habilidades
-    colorControlled:      '#ffee88',  // hue amarillo claro para zombies controlados por LMB
+    labelHealth:            'HEALTH',
+    labelXP:                'XP',
+    labelLMB:               'LMB',
+    labelRMB:               'RMB',
+    labelDash:              'DASH',
+    labelPopHumans:         'HUMANS',
+    labelPopZombies:        'ZOMBIES',
+    labelPopForces:         'POLICE',
+    hudFontSize:            25,    // tamaño de fuente del HUD en px
+    hudFontSizeLarge:       18,    // tamaño para labels de habilidades
+    colorControlled:        '#fffb00',  // hue amarillo claro para zombies controlados por LMB
+    controlledZombieScaleX: 1.1,  // escala horizontal del glow
+    controlledZombieScaleY: 1.1,  // escala vertical del glow
 
     // ── HUD: tamaños ──────────────────────────────────────────────────────
     hudBarWidth:          300,   // ancho de las barras de salud y XP en px
-    hudCooldownRadius:    60,    // radio de los círculos de cooldown en px
+    hudCooldownRadius:    50,    // radio de los círculos de cooldown en px
 
     // ── XP / niveles ──────────────────────────────────────────────────────
     xpLevel1:             25,    // infectados para el primer nivel

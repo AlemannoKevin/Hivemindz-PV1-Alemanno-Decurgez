@@ -96,7 +96,9 @@ class Player {
 
     takeDamage() {
         if (!this.isZombie || this._comeTogether) return;
-        this.health -= 1;
+        const mitig = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+            ? Config.necroticDmgMitig : 1;
+        this.health -= mitig;
         if (this.sprite) {
             this.sprite.tint = 0xff4444;
             setTimeout(() => { if (this.sprite) this.sprite.tint = 0xffffff; }, 150);
@@ -133,7 +135,8 @@ class Player {
     }
 
     _necroCD() {
-        return Game.instance?._rmbUpgrade === 'necrotic' ? 0.5 : 1;
+        return (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+            ? Config.necroticDashRedux : 1;
     }
 
     _spawnDashTrail() {
@@ -178,14 +181,17 @@ class Player {
             if (this._dashDuration % 2 === 0) this._spawnDashTrail();
         } else {
             if (moveX !== 0 && moveY !== 0) { moveX *= 0.707; moveY *= 0.707; }
-            const slow = Game.instance?._rmbUpgrade === 'necrotic' ? Config.necroticPlayerSlow : 1;
+            const slow = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+                ? Config.necroticSlowToggle : 1;
             this.x += moveX * Config.playerSpeed * deltaTime * slow;
             this.y += moveY * Config.playerSpeed * deltaTime * slow;
         }
 
         if (this._pushVx || this._pushVy) {
-            this.x   += this._pushVx * deltaTime;
-            this.y   += this._pushVy * deltaTime;
+            const pushMult = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+                ? Config.necroticPushResist : 1;
+            this.x   += this._pushVx * deltaTime * pushMult;
+            this.y   += this._pushVy * deltaTime * pushMult;
             this._pushVx *= 0.85;
             this._pushVy *= 0.85;
         }

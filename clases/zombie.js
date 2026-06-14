@@ -43,23 +43,67 @@ class Zombie extends GameObject {
         if (!this.sprite || Math.hypot(this.headingX, this.headingY) < 0.1) return;
         if (this.headingX > 0.1)       this.sprite.scale.x =  1;
         else if (this.headingX < -0.1) this.sprite.scale.x = -1;
+
+        // Sincronizamos el glow con el flip
+        if (this._glowSprite) {
+            this._glowSprite.scale.x = this.sprite.scale.x > 0
+                ? Config.controlledZombieScaleX
+                : -Config.controlledZombieScaleX;
+        }
     }
 
     _actualizarContorno(activo) {
         if (!this.sprite) return;
+
         if (activo) {
-            if (!this._contornoActivo) {
-                this._contornoActivo = true;
+            this._contornoActivo = true;
+            if (!this._glowSprite) {
+                // Creamos el glow con las mismas texturas que el sprite principal
+                this._glowSprite = new PIXI.AnimatedSprite(this.sprite.textures);
+                this._glowSprite.anchor.set(0.5);
+                this._glowSprite.tint  = 0xffff00;
+                this._glowSprite.alpha = 1.0;
+                // Usamos un filtro de color para hacer el amarillo 100% sólido
+                const colorMatrix = new PIXI.ColorMatrixFilter();
+                colorMatrix.matrix = [
+                    0, 0, 0, 0, 1,   // R → máximo
+                    0, 0, 0, 0, 1,   // G → máximo
+                    0, 0, 0, 0, 0,   // B → cero
+                    0, 0, 0, 1, 0,   // A → preservar
+                ];
+                this._glowSprite.filters = [colorMatrix];
+
+                if (this.container.children.length > 0) {
+                    this.container.addChildAt(this._glowSprite, 0);
+                } else {
+                    this.container.addChild(this._glowSprite);
+                }
             }
-            // No sobreescribimos si tiene boost rojo activo
-            if (!(this._ctBoostTimer > 0)) {
-                this.sprite.tint = 0xffee88; // amarillo claro configurable
+
+            // Sincronizamos texturas si cambiaron (ataque vs movimiento)
+            if (this._glowSprite.textures !== this.sprite.textures) {
+                this._glowSprite.textures = this.sprite.textures;
+                this._glowSprite.gotoAndStop(this.sprite.currentFrame);
             }
-        } else if (!activo && this._contornoActivo) {
+
+            // Sincronizamos el frame exacto
+            if (this._glowSprite.currentFrame !== this.sprite.currentFrame) {
+                this._glowSprite.gotoAndStop(this.sprite.currentFrame);
+            }
+
+            // Sincronizamos scale con flip
+            this._glowSprite.scale.x = this.sprite.scale.x > 0
+                ? Config.controlledZombieScaleX
+                : -Config.controlledZombieScaleX;
+            this._glowSprite.scale.y = Config.controlledZombieScaleY;
+
+        } else if (this._contornoActivo) {
             this._contornoActivo = false;
-            // Solo restauramos si no tiene boost activo
-            if (!(this._ctBoostTimer > 0)) {
-                this.sprite.tint = 0xffffff;
+            if (this._glowSprite) {
+                this._glowSprite.filters = [];
+                this.container.removeChild(this._glowSprite);
+                this._glowSprite.destroy();
+                this._glowSprite = null;
             }
         }
     }
@@ -71,12 +115,10 @@ class Zombie extends GameObject {
         this._ctBoostTimer -= deltaTime;
         if (this._ctBoostTimer <= 0) {
             this._ctReducedAttackCD = false;
-            if (this.sprite) {
-                // Si sigue siendo controlado por LMB, volvemos a amarillo
-                this.sprite.tint = this._contornoActivo ? 0xffee88 : 0xffffff;
-            }
+            if (this.sprite) this.sprite.tint = 0xffffff;
         }
     }
+
     _speedMultiplier() {
         const slow        = this._slowTimer > 0 ? Config.brawlerSlowFactor : 1;
         const orbitBoost  = Game.instance?._lmbUpgrade === 'orbit' ? Config.orbitSpeedBoost : 1;
@@ -185,16 +227,21 @@ class Zombie extends GameObject {
         this._tickCTBoost(deltaTime);
 
         // Come Together: movimiento gestionado externamente
-        if (this._comeTogether) { this._setAnimation('move', true); return; }
-
+        if (this._comeTogether) {
+            this._actualizarContorno(true);
+            this._setAnimation('move', true);
+            return;
+        }
         // Biomass: resistencia al push
         if (this._bioBall) {
             this._pushVx *= Config.bioPushResist;
             this._pushVy *= Config.bioPushResist;
-            this._actualizarContorno(true);
-        } else {
-            this._actualizarContorno(false);
         }
+
+        // Glow amarillo: activo si está siendo controlado por cualquier mecanismo LMB
+        const estaControlado = this._bioBall || lmbControlled;
+        this._actualizarContorno(estaControlado);
+
         // Separación (el central la ignora)
         if (!this._bioCentral) {
             for (const other of allZombies) {

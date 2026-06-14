@@ -34,6 +34,7 @@ class Game {
 
         // Habilidades RMB
         this._necroticPulses   = null;
+        this._necroticOn       = false;   // toggle del necrotic
 
         // LMB básico overheat
         this._lmbOverheat      = Config.lmbOverheatMax;
@@ -71,16 +72,14 @@ class Game {
             { alias: 'testBackground2', src: 'testBackground2.png' },
             { alias: 'ruinedCar1',      src: 'ruinedCar1.png'      },
             { alias: 'ruinedCar2',      src: 'ruinedCar2.png'      },
+            { alias: 'ruinedCar3',      src: 'ruinedCar3.png'      },
+            { alias: 'ruinedCar4',      src: 'ruinedCar4.png'      },
+            { alias: 'ruinedCar5',      src: 'ruinedCar5.png'      },
         ]);
 
         this.worldContainer = new PIXI.Container();
         this.app.stage.addChild(this.worldContainer);
         World.buildBackground(this.worldContainer);
-
-        this.obstacle = new Obstacle(
-            Config.worldWidth / 2 + 150, Config.worldHeight / 2 + 100,
-            this.worldContainer, 'ruinedCar1'
-        );
 
         this._obstacles = [
             new Obstacle(Config.worldWidth * 0.15, Config.worldHeight * 0.2,  this.worldContainer, 'ruinedCar2'),
@@ -89,6 +88,15 @@ class Game {
             new Obstacle(Config.worldWidth * 0.75, Config.worldHeight * 0.8,  this.worldContainer, 'ruinedCar1'),
             new Obstacle(Config.worldWidth * 0.5,  Config.worldHeight * 0.2,  this.worldContainer, 'ruinedCar2'),
             new Obstacle(Config.worldWidth * 0.6,  Config.worldHeight * 0.65, this.worldContainer, 'ruinedCar1'),
+            new Obstacle(Config.worldWidth * 0.10, Config.worldHeight * 0.50, this.worldContainer, 'ruinedCar3'), 
+            new Obstacle(Config.worldWidth * 0.90, Config.worldHeight * 0.50, this.worldContainer, 'ruinedCar3'), 
+            new Obstacle(Config.worldWidth * 0.50, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar3'), 
+            new Obstacle(Config.worldWidth * 0.35, Config.worldHeight * 0.40, this.worldContainer, 'ruinedCar4'), 
+            new Obstacle(Config.worldWidth * 0.65, Config.worldHeight * 0.35, this.worldContainer, 'ruinedCar4'), 
+            new Obstacle(Config.worldWidth * 0.45, Config.worldHeight * 0.55, this.worldContainer, 'ruinedCar4'), 
+            new Obstacle(Config.worldWidth * 0.10, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar5'),
+            new Obstacle(Config.worldWidth * 0.90, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar5'),
+            new Obstacle(Config.worldWidth * 0.20, Config.worldHeight * 0.35, this.worldContainer, 'ruinedCar5')
         ];
 
         Input.init();
@@ -184,7 +192,13 @@ class Game {
             document.getElementById('population-bar-wrap').style.display  = 'flex';
             return;
         }
-        if (this.player._bulletCooldown > 0 || this.player._comeTogether || this._rmbUpgrade === 'necrotic') return;
+    
+        if (this._rmbUpgrade === 'necrotic') {
+            this._necroticOn = !this._necroticOn;
+            return;
+        }
+
+        if (this.player._bulletCooldown > 0 || this.player._comeTogether) return;
 
         this.player.attack();
         const angle = Utils.angleTo(this.player.x, this.player.y, mx, my);
@@ -448,8 +462,11 @@ class Game {
         if (arcRMB) {
             arcRMB.style.stroke = Config.colorRMB;
             let pctRMB = 1;
+            // NUEVO
             if (this._rmbUpgrade === 'necrotic') {
-                pctRMB = 1; // siempre lleno
+                pctRMB = 1;
+                // Cambiamos el color según el estado ON/OFF
+                arcRMB.style.stroke = this._necroticOn ? Config.colorRMB : 'rgba(255,255,255,0.25)';
             } else if (this.player._bulletCooldown > 0) {
                 const shotMax = this._rmbUpgrade === 'dagger' ? Config.daggerCooldown : Config.playerBulletCooldown;
                 pctRMB = 1 - (this.player._bulletCooldown / shotMax);
@@ -468,7 +485,13 @@ class Game {
     _tickRMBAbilities(delta) {
         if (this._rmbUpgrade === 'necrotic' && this.player.isZombie) {
             if (!this._necroticPulses) this._necroticPulses = new NecroticPulses(this.player, this.worldContainer);
-            this._necroticPulses.update(delta, this.humans, this.policia, this.zombies);
+            if (this._necroticOn) {
+                this._necroticPulses.update(delta, this.humans, this.policia, this.zombies);
+            }
+            // Pasamos el estado al player para que aplique los efectos
+            this.player._necroticOn = this._necroticOn;
+        } else {
+            this.player._necroticOn = false;
         }
     }
 

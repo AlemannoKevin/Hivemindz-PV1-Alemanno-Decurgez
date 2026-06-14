@@ -124,13 +124,7 @@ class BalaPolicia extends BalaBase {
             zombie.sprite.tint = 0xff4444;
             setTimeout(() => {
                 if (!zombie._dead && zombie.sprite) {
-                    if (zombie._ctBoostTimer > 0) {
-                        zombie.sprite.tint = 0xff4444;
-                    } else if (zombie._contornoActivo) {
-                        zombie.sprite.tint = 0xffee88;
-                    } else {
-                        zombie.sprite.tint = 0xffffff;
-                    }
+                    zombie.sprite.tint = zombie._ctBoostTimer > 0 ? 0xff4444 : 0xffffff;
                 }
             }, 150);
         }
