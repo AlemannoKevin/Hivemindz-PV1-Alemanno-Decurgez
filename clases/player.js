@@ -95,7 +95,7 @@ class Player {
     }
 
     takeDamage() {
-        if (!this.isZombie || this._comeTogether) return;
+        if (!this.isZombie || this._comeTogether || this._hivemindActive) return;
         const mitig = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
             ? Config.necroticDmgMitig : 1;
         this.health -= mitig;
@@ -159,6 +159,7 @@ class Player {
     // ── Movimiento ────────────────────────────────────────────────────────
     handleMovement(deltaTime) {
         if (this._comeTogether) return;
+        if (this._hivemindActive && Game.instance?._hivemind?._phase === 'gather') return;
 
         let moveX = 0, moveY = 0;
         if (Input.isHeld('w') || Input.isHeld('arrowup'))    moveY -= 1;
@@ -181,10 +182,16 @@ class Player {
             if (this._dashDuration % 2 === 0) this._spawnDashTrail();
         } else {
             if (moveX !== 0 && moveY !== 0) { moveX *= 0.707; moveY *= 0.707; }
-            const slow = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+            let slow = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
                 ? Config.necroticSlowToggle : 1;
-            this.x += moveX * Config.playerSpeed * deltaTime * slow;
-            this.y += moveY * Config.playerSpeed * deltaTime * slow;
+            // Hivemind fase activa: velocidad fija
+            if (this._hivemindActive && Game.instance?._hivemind?._phase === 'active') {
+                this.x += moveX * Config.hivemindActiveSpeed * deltaTime;
+                this.y += moveY * Config.hivemindActiveSpeed * deltaTime;
+            } else {
+                this.x += moveX * Config.playerSpeed * deltaTime * slow;
+                this.y += moveY * Config.playerSpeed * deltaTime * slow;
+            }
         }
 
         if (this._pushVx || this._pushVy) {

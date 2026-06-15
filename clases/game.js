@@ -52,6 +52,11 @@ class Game {
         this._waveUpgradeTimer = 0;
         this._gameMode         = null;
 
+        this._hivemind        = null;
+        this._hivemindCD      = 0;
+        this._eliteCD         = 0;
+        this._eliteInst       = null;
+
         setup().then(() => this.start());
     }
 
@@ -181,6 +186,10 @@ class Game {
             if (!this._comeTogether && this._comeTogetherCD <= 0) {
                 this._comeTogether = new ComeTogether(this.player, this.zombies, this.worldContainer);
             }
+        } else if (this._lmbUpgrade === 'hivemind') {
+            if (!this._hivemind && this._hivemindCD <= 0) {
+                this._hivemind = new Hivemind(this.player, this.zombies, this.worldContainer);
+            }
         }
     }
 
@@ -193,6 +202,13 @@ class Game {
             return;
         }
     
+        if (this._rmbUpgrade === 'elite') {
+            if (this._eliteCD <= 0) {
+                this._eliteInst = new EliteReinforcement(this.player, this.zombies, this.worldContainer);
+                this._eliteCD   = Config.eliteCooldown;
+            }
+            return;
+        }
         if (this._rmbUpgrade === 'necrotic') {
             this._necroticOn = !this._necroticOn;
             return;
@@ -327,6 +343,16 @@ class Game {
             if (this._bioCD > 0) this._bioCD -= delta;
         }
 
+        if (this._lmbUpgrade === 'hivemind') {
+            if (this._hivemind && !this._hivemind._muerto) {
+                this._hivemind.update(delta);
+            } else if (this._hivemind?._muerto) {
+                if (this._hivemindCD <= 0) this._hivemindCD = Config.hivemindCooldown;
+                this._hivemind = null;
+            }
+            if (this._hivemindCD > 0) this._hivemindCD -= delta;
+        }
+
         return { lmbActive, lmbTargetX, lmbTargetY };
     }
 
@@ -419,7 +445,12 @@ class Game {
                 this._mostrarUpgrade();
             }
         }
-        if (this.player.isZombie && this.humans.every(h => h._infected)) this._mostrarVictoria();
+
+        if (this.player.isZombie &&
+            this.humans.every(h => h._infected) &&
+            this.policia.length === 0) {
+            this._mostrarVictoria();
+        }
     }
 
     _actualizarCirculos() {
@@ -447,11 +478,14 @@ class Game {
             } else if (this._lmbUpgrade === 'cometogether') {
                 const cdMax = Config.comeTogetherDuration * 2;
                 pctLMB = this._comeTogetherCD > 0 ? 1 - (this._comeTogetherCD / cdMax) : 1;
+            } else if (this._lmbUpgrade === 'hivemind') {
+                pctLMB = this._hivemindCD > 0 ? 1 - (this._hivemindCD / Config.hivemindCooldown) : 1;
             }
             arcLMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctLMB)))).toFixed(2);
+
             if (lblLMB) lblLMB.textContent = this._lmbUpgrade
-                ? (HABILIDADES.find(h => h.id === this._lmbUpgrade)?.nombre || Config.labelLMB)
-                : Config.labelLMB;
+                ? (HABILIDADES.find(h => h.id === this._lmbUpgrade)?.nombre || 'Rally of Death')
+                : 'Rally of Death';
             if (lblLMBc) lblLMBc.textContent = Config.labelLMB;
         }
 
@@ -470,12 +504,18 @@ class Game {
             } else if (this.player._bulletCooldown > 0) {
                 const shotMax = this._rmbUpgrade === 'dagger' ? Config.daggerCooldown : Config.playerBulletCooldown;
                 pctRMB = 1 - (this.player._bulletCooldown / shotMax);
+            } else if (this._rmbUpgrade === 'elite') {
+                pctRMB = this._eliteCD > 0 ? 1 - (this._eliteCD / Config.eliteCooldown) : 1;
             }
             arcRMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctRMB)))).toFixed(2);
             if (lblRMB) lblRMB.textContent = this._rmbUpgrade
                 ? (HABILIDADES.find(h => h.id === this._rmbUpgrade)?.nombre || Config.labelRMB)
                 : Config.labelRMB;
+            if (lblRMB) lblRMB.textContent = this._rmbUpgrade
+                ? (HABILIDADES.find(h => h.id === this._rmbUpgrade)?.nombre || 'Infecting Spit')
+                : 'Infecting Spit';
             if (lblRMBc) lblRMBc.textContent = Config.labelRMB;
+            
         }
 
         const lblDash = document.getElementById('label-dash-ability');
@@ -483,6 +523,12 @@ class Game {
     }
 
     _tickRMBAbilities(delta) {
+        if (this._rmbUpgrade === 'elite' && this._eliteInst) {
+            const terminado = this._eliteInst.update(delta, this.zombies);
+            if (terminado) this._eliteInst = null;
+        }
+        if (this._eliteCD > 0) this._eliteCD -= delta;
+
         if (this._rmbUpgrade === 'necrotic' && this.player.isZombie) {
             if (!this._necroticPulses) this._necroticPulses = new NecroticPulses(this.player, this.worldContainer);
             if (this._necroticOn) {
@@ -543,8 +589,14 @@ class Game {
                 z._comeTogether = false;
                 z._actualizarContorno?.(false);
             }
-            this._bioball?._disolver();
-            this._bioball = null;
+            if (this._bioball) {
+                this._bioball._disolver();
+                this._bioball = null;
+            }
+            if (this._hivemind) {
+                this._hivemind._terminar();
+                this._hivemind = null;
+            }
             if (this._comeTogether) {
                 this._comeTogether._muerto = true;
                 this.player._comeTogether  = false;
@@ -568,19 +620,65 @@ class Game {
         if (lmb) this._habilidadesUsadas.push(lmb.id);
         if (rmb) this._habilidadesUsadas.push(rmb.id);
 
+        // Spawn de zombies post-upgrade alrededor del jugador
+        if (this.player.isZombie) {
+            for (let i = 0; i < Config.upgradeZombieSpawn; i++) {
+                const angle  = Utils.randomAngle();
+                const dist   = Utils.randomBetween(80, 160);
+                const zx     = Utils.clamp(this.player.x + Math.cos(angle) * dist, 16, Config.worldWidth - 16);
+                const zy     = Utils.clamp(this.player.y + Math.sin(angle) * dist, 16, Config.worldHeight - 16);
+                this.zombies.push(new Zombie(zx, zy, this.worldContainer));
+            }
+
+            // Cap de zombies en waves
+            if (this._waveMode && this.zombies.length > Config.upgradeZombieCap) {
+                const excess = this.zombies.length - Config.upgradeZombieCap;
+                for (let i = 0; i < excess; i++) {
+                    const z = this.zombies.pop();
+                    if (z) this.worldContainer.removeChild(z.container);
+                }
+            }
+
+            // Reposición de enemigos en modo normal
+            if (!this._waveMode) {
+                const isLast   = this._upgradeCount >= 3;
+                const target   = isLast ? Config.upgradeEnemyTargetFinal : Config.upgradeEnemyTarget;
+                const faltan   = target - this.policia.length;
+                for (let i = 0; i < faltan; i++) {
+                    let px, py, tries = 0;
+                    do {
+                        px = Utils.randomBetween(80, Config.worldWidth - 80);
+                        py = Utils.randomBetween(80, Config.worldHeight - 80);
+                    } while (++tries < 20 && Utils.distance(px, py, this.player.x, this.player.y) < 300);
+                    this.policia.push(Math.random() < Config.waveSwatRatio
+                        ? new Swat(px, py, this.worldContainer)
+                        : new Policia(px, py, this.worldContainer)
+                    );
+                }
+            }
+        }
+
         const cards = document.getElementById('upgrade-cards');
         cards.innerHTML = '';
 
         const crearCard = (hab, color, alpha) => {
             const div = document.createElement('div');
-            div.style.cssText = `width:200px;padding:24px 20px;border:2px solid ${color};border-radius:12px;background:rgba(${alpha});cursor:pointer;text-align:center;`;
+            div.style.cssText = `
+                width:${Config.upgradeCardWidth}px;
+                padding:24px 20px;
+                border:2px solid ${color};
+                border-radius:12px;
+                background:rgba(${alpha});
+                cursor:pointer;
+                text-align:center;
+            `;
             div.onmouseover = () => div.style.background = `rgba(${alpha.replace('0.07', '0.18')})`;
             div.onmouseout  = () => div.style.background = `rgba(${alpha})`;
             div.onclick     = () => this.pickUpgrade(hab.id);
             div.innerHTML   = `
-                <div style="font-size:11px;color:${color};letter-spacing:2px;margin-bottom:10px;">${hab.tipo.toUpperCase()}</div>
-                <div style="font-size:15px;font-weight:bold;letter-spacing:1px;margin-bottom:12px;">${hab.nombre}</div>
-                <div style="font-size:11px;color:#bbb;line-height:1.6;">${hab.desc}</div>`;
+                <div style="font-size:${Config.upgradeCardFontType}px;color:${color};letter-spacing:2px;margin-bottom:10px;">${hab.tipo.toUpperCase()}</div>
+                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;letter-spacing:1px;margin-bottom:12px;">${hab.nombre}</div>
+                <div style="font-size:${Config.upgradeCardFontDesc}px;color:#bbb;line-height:1.6;">${hab.desc}</div>`;
             return div;
         };
 
@@ -588,7 +686,8 @@ class Game {
         if (rmb) cards.appendChild(crearCard(rmb, '#ffb74d', '255,183,77,0.07'));
 
         this._paused = true;
-        document.getElementById('upgrade-screen').style.display = 'flex';
+        const screen = document.getElementById('upgrade-screen');
+        screen.style.display = 'flex';
     }
 
     _mostrarVictoria() {
@@ -638,7 +737,11 @@ class Game {
             this._waveNumber++;
             this._waveTimer = Config.waveDuration;
 
-            if (this._waveNumber > Config.waveTotalWaves) { this._mostrarVictoria(); return; }
+            if (this._waveNumber > Config.waveTotalWaves) {
+                // Última wave: no spawneamos más, esperamos que el jugador limpie el mapa
+                this._waveNumber = Config.waveTotalWaves; // no sigue subiendo
+                // La victoria se chequea abajo
+            }
 
             const cantidad = Math.floor(Config.waveEnemyBase * (1 + Config.waveEnemyGrowth * (this._waveNumber - 1)));
             for (let i = 0; i < cantidad; i++) {
@@ -660,5 +763,17 @@ class Game {
                 );
             }
         }
+
+        // Victoria en waves: última wave completada + mapa limpio
+        if (this._waveNumber >= Config.waveTotalWaves &&
+            this.player.isZombie &&
+            this.humans.every(h => h._infected) &&
+            this.policia.length === 0) {
+            this._mostrarVictoria();
+        }
+
+        const counter = document.getElementById('wave-counter');
+        if (counter) counter.textContent =
+            `WAVE ${this._waveNumber}/${Config.waveTotalWaves} — ${Math.ceil(this._waveTimer / 60)}s`;
     }
 }

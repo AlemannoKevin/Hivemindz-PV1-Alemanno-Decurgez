@@ -12,6 +12,10 @@ const HABILIDADES = [
       desc: 'Burst de 3 proyectiles. Requiere varios impactos para infectar. Mayor daño a enemigos.' },
     { id: 'pit',          tipo: 'rmb', nombre: 'Poisonous Pit',
       desc: 'Proyectil que deja un charco venenoso al impactar humano/enemigo. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.' },
+    { id: 'elite',        tipo: 'rmb', nombre: 'Elite Reinforcements',
+      desc: 'Spawnea zombies élite alrededor del jugador. Los zombies desaparecen después de un tiempo.' },
+    { id: 'hivemind',     tipo: 'lmb', nombre: 'Hivemind',
+      desc: 'Zombies rodean al jugador, copiando sus movimientos. Buffs de velocidad para todos e inmunidad al daño para el jugador.' },
 ];
 
 function elegirHabilidades(yaElegidas) {
@@ -20,7 +24,7 @@ function elegirHabilidades(yaElegidas) {
     return { lmb: pick(disp('lmb')), rmb: pick(disp('rmb')) };
 }
 
-// ── Helpers visuales compartidos ──────────────────────────────────────────────
+// ── Helpers visuales ──────────────────────────────────────────────
 function _animarRingColor(wc, cx, cy, maxRadius, color, frames = 25, offset = 0) {
     const ring = new PIXI.Graphics();
     wc.addChild(ring);
@@ -400,5 +404,248 @@ class NecroticPulses {
                 if (cop._hits <= 0) cop._dead = true;
             }
         );
+    }
+}
+
+// ── Hivemind ───────────────────────────────────────────────────────────────
+class Hivemind {
+    constructor(player, zombies, worldContainer) {
+        this._player  = player;
+        this._wc      = worldContainer;
+        this._phase   = 'gather';
+        this._timer   = Config.hivemindGatherDuration;
+        this._muerto  = false;
+        this._zombies = [];
+        this._offsets = []; // offsets fijos dentro del círculo para cada zombie
+
+        // Zombies existentes más cercanos
+        const existentes = [...zombies]
+            .filter(z => !z._dead)
+            .sort((a, b) =>
+                Utils.distance(a.x, a.y, player.x, player.y) -
+                Utils.distance(b.x, b.y, player.x, player.y)
+            )
+            .slice(0, Config.hivemindZombieCount);
+
+        // Spawneamos zombies adicionales
+        for (let i = 0; i < Config.hivemindSpawnCount; i++) {
+            const angle  = (i / Config.hivemindSpawnCount) * Math.PI * 2;
+            const spawnX = Utils.clamp(player.x + Math.cos(angle) * 200, 16, Config.worldWidth  - 16);
+            const spawnY = Utils.clamp(player.y + Math.sin(angle) * 200, 16, Config.worldHeight - 16);
+            const z      = new Zombie(spawnX, spawnY, worldContainer);
+            zombies.push(z);
+            existentes.push(z);
+        }
+
+        this._zombies = existentes;
+
+        // Calculamos posiciones evenly spaced dentro del círculo
+        // Usamos una distribución en espiral para llenar el área
+        const total = this._zombies.length;
+        for (let i = 0; i < total; i++) {
+            const r     = Config.hivemindRadius * 0.5 * Math.sqrt(i / total);
+            const angle = i * 2.399963; // golden angle en radianes para distribución uniforme
+            this._offsets.push({
+                x: Math.cos(angle) * r,
+                y: Math.sin(angle) * r,
+            });
+        }
+
+        for (const z of this._zombies) {
+            z._hivemind = true;
+        }
+
+        player._hivemindActive = true;
+        if (player.sprite) player.sprite.tint = 0xaaffaa;
+    }
+
+    update(delta) {
+        if (this._muerto) return;
+        this._timer -= delta;
+
+        if (this._phase === 'gather') {
+            this._updateGather(delta);
+            if (this._timer <= 0) {
+                this._phase = 'active';
+                this._timer = Config.hivemindActiveDuration;
+            }
+        } else {
+            this._updateActive(delta);
+            if (this._timer <= 0) this._terminar();
+        }
+    }
+
+    _updateGather(delta) {
+        for (let i = 0; i < this._zombies.length; i++) {
+            const z = this._zombies[i];
+            if (z._dead) continue;
+
+            // Target: posición del jugador + offset del círculo
+            const targetX = this._player.x + this._offsets[i].x;
+            const targetY = this._player.y + this._offsets[i].y;
+            const dx      = targetX - z.x;
+            const dy      = targetY - z.y;
+            const dist    = Math.hypot(dx, dy);
+
+            if (dist > 3) {
+                const spd = Config.hivemindGatherSpeed * delta;
+                z.x += (dx / dist) * Math.min(spd, dist);
+                z.y += (dy / dist) * Math.min(spd, dist);
+                z.headingX = dx;
+                z.headingY = dy;
+            }
+
+            z.flipSprite?.();
+            z._actualizarContorno?.(true);
+            z.container.x = z.x;
+            z.container.y = z.y;
+        }
+    }
+
+    _updateActive(delta) {
+        const game = Game.instance;
+
+        for (let i = 0; i < this._zombies.length; i++) {
+            const z = this._zombies[i];
+            if (z._dead) continue;
+
+            // Mimican la posición del jugador + su offset fijo
+            z.x = this._player.x + this._offsets[i].x;
+            z.y = this._player.y + this._offsets[i].y;
+
+            // Gestionan su propio ataque
+            if (z._attackCooldown > 0) z._attackCooldown -= delta;
+
+            if (!z._isAttacking && z._attackCooldown <= 0) {
+                // Buscamos target en rango de ataque
+                let target   = null;
+                let bestDist = Config.zombieAttackRange;
+
+                for (const h of (game?.humans || [])) {
+                    if (h._infected || h._turning) continue;
+                    const d = Utils.distance(z.x, z.y, h.x, h.y);
+                    if (d < bestDist) { bestDist = d; target = h; }
+                }
+                for (const cop of (game?.policia || [])) {
+                    if (cop._dead) continue;
+                    const d = Utils.distance(z.x, z.y, cop.x, cop.y);
+                    if (d < bestDist) { bestDist = d; target = cop; }
+                }
+
+                if (target) {
+                    z._isAttacking    = true;
+                    z._attackCooldown = Config.hivemindAttackCooldown;
+                    z._setAnimation?.('attack', false);
+
+                    const captured = target;
+                    const wc       = this._wc;
+                    const allZombies = game?.zombies || [];
+
+                    if (z.sprite) {
+                        z.sprite.onComplete = () => {
+                            z._isAttacking = false;
+                            z._setAnimation?.('move', true);
+                            z.sprite.onComplete = null;
+
+                            // Verificamos distancia final
+                            const finalDist = Utils.distance(z.x, z.y, captured.x, captured.y);
+                            if (finalDist >= Config.zombieAttackRange + 20) return;
+
+                            if (captured.startInfection) {
+                                if (captured instanceof Peleador) {
+                                    captured._infeccionAcum = (captured._infeccionAcum || 0) + 1;
+                                    captured._actualizarBarraInfeccion?.();
+                                    if (captured._infeccionAcum >= Config.brawlerInfectHits) {
+                                        captured._infeccionAcum = 0;
+                                        captured.startInfection(wc, allZombies);
+                                    }
+                                } else {
+                                    captured.startInfection(wc, allZombies);
+                                }
+                            } else {
+                                captured.takeDamage?.();
+                            }
+                        };
+                    }
+                }
+            }
+
+            // Orientación hacia el target más cercano o hacia afuera
+            let nearestForFlip = null, nearestFlipDist = Config.zombieSeekRange;
+            for (const h of (game?.humans || [])) {
+                if (h._infected) continue;
+                const d = Utils.distance(z.x, z.y, h.x, h.y);
+                if (d < nearestFlipDist) { nearestFlipDist = d; nearestForFlip = h; }
+            }
+            for (const cop of (game?.policia || [])) {
+                if (cop._dead) continue;
+                const d = Utils.distance(z.x, z.y, cop.x, cop.y);
+                if (d < nearestFlipDist) { nearestFlipDist = d; nearestForFlip = cop; }
+            }
+
+            if (nearestForFlip) {
+                z.headingX = nearestForFlip.x - z.x;
+                z.headingY = nearestForFlip.y - z.y;
+            } else {
+                z.headingX = this._offsets[i].x;
+                z.headingY = this._offsets[i].y;
+            }
+
+            if (!z._isAttacking) z._setAnimation?.('move', true);
+
+            z.flipSprite?.();
+            z._actualizarContorno?.(true);
+            z.container.x = z.x;
+            z.container.y = z.y;
+        }
+    }
+
+    _terminar() {
+        this._muerto = true;
+        this._player._hivemindActive = false;
+        if (this._player.sprite) this._player.sprite.tint = 0xffffff;
+        for (const z of this._zombies) {
+            z._hivemind = false;
+            z._actualizarContorno?.(false);
+        }
+    }
+}
+
+// ── Elite Reinforcements ────────────────────────────────────────────────────
+class EliteReinforcement {
+    constructor(player, zombies, worldContainer) {
+        this._wc    = worldContainer;
+        this._elites = [];
+
+        for (let i = 0; i < Config.eliteCount; i++) {
+            const angle  = (i / Config.eliteCount) * Math.PI * 2;
+            const spawnX = player.x + Math.cos(angle) * 60;
+            const spawnY = player.y + Math.sin(angle) * 60;
+            const z      = new Zombie(spawnX, spawnY, worldContainer);
+
+            // Aplicamos los buffs de come together
+            z._ctBoostTimer      = Config.eliteDuration;
+            z._ctReducedAttackCD = true;
+            if (z.sprite) z.sprite.tint = 0xff4444;
+
+            // Timer de vida propio
+            z._eliteTimer = Config.eliteDuration;
+            z._isElite    = true;
+
+            zombies.push(z);
+            this._elites.push(z);
+        }
+    }
+
+    update(delta, zombies) {
+        for (const z of this._elites) {
+            if (z._dead) continue;
+            z._eliteTimer -= delta;
+            if (z._eliteTimer <= 0) {
+                z._dead = true;
+            }
+        }
+        // Terminamos si todos murieron o expiraron
+        return this._elites.every(z => z._dead);
     }
 }

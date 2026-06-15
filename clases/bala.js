@@ -124,7 +124,12 @@ class BalaPolicia extends BalaBase {
             zombie.sprite.tint = 0xff4444;
             setTimeout(() => {
                 if (!zombie._dead && zombie.sprite) {
-                    zombie.sprite.tint = zombie._ctBoostTimer > 0 ? 0xff4444 : 0xffffff;
+                    if (zombie._ctBoostTimer > 0) {
+                        zombie.sprite.tint = 0xff4444;
+                    } else {
+                        zombie.sprite.tint = 0xffffff;
+                        // El glow amarillo lo maneja _actualizarContorno, no el tint
+                    }
                 }
             }, 150);
         }

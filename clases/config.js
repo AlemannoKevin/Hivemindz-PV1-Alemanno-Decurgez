@@ -140,6 +140,39 @@ const Config = {
     necroticSlowToggle:       0.4,  // multiplicador de velocidad cuando está ON
     necroticDashRedux:        0.25,  // multiplicador de cooldown de dash cuando ON
 
+    // ── Hivemind ──────────────────────────────────────────────────────────
+    hivemindRadius:           100,   // radio del anillo alrededor del jugador
+    hivemindBandWidth:        50,    // grosor del anillo
+    hivemindGatherDuration:   150,   // frames de fase de gather (2.5s)
+    hivemindActiveDuration:   500,   // frames de fase activa
+    hivemindCooldown:         600,   // frames de cooldown (10s)
+    hivemindGatherSpeed:      4.0,   // velocidad de gather
+    hivemindActiveSpeed:      4.0,   // velocidad del jugador y zombies en fase activa
+    hivemindAttackCooldown:   30,    // cooldown de ataque reducido en fase activa
+    hivemindSpawnCount:       25,    // zombies que spawna la habilidad
+    hivemindZombieCount:      25,    // máximo zombies del anillo (existentes)
+
+    // ── Elite Reinforcements ──────────────────────────────────────────────
+    eliteCount:               5,     // zombies spawneados
+    eliteDuration:            475,   // frames de vida
+    eliteCooldown:            450,   // frames de cooldown
+
+    // ── Spawns post-upgrade ───────────────────────────────────────────────
+    upgradeZombieSpawn:       10,    // zombies que spawnan tras elegir habilidad
+    upgradeEnemyTarget:       50,    // enemigos objetivo tras upgrade (normal)
+    upgradeEnemyTargetFinal:  75,    // enemigos objetivo en el último upgrade
+    upgradeZombieCap:         200,   // cap de zombies en waves mode
+
+    // ── HUD upgrade screen ────────────────────────────────────────────────
+    upgradeCardWidth:         220,
+    upgradeCardFontTitle:     15,
+    upgradeCardFontDesc:      11,
+    upgradeCardFontType:      11,
+    upgradeScreenTitleSize:   28,
+
+    // ── Waves HUD ─────────────────────────────────────────────────────────
+    waveCounterFontSize:      18,
+
     // ── Waves Mode ────────────────────────────────────────────────────────
     waveDuration:       1800,
     waveEnemyBase:      12,

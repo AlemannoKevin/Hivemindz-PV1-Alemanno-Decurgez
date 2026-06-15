@@ -120,10 +120,10 @@ class Zombie extends GameObject {
     }
 
     _speedMultiplier() {
-        const slow        = this._slowTimer > 0 ? Config.brawlerSlowFactor : 1;
-        const orbitBoost  = Game.instance?._lmbUpgrade === 'orbit' ? Config.orbitSpeedBoost : 1;
+        const slow         = this._slowTimer > 0 ? Config.brawlerSlowFactor : 1;
+        const orbitBoost   = Game.instance?._lmbUpgrade === 'orbit' ? Config.orbitSpeedBoost : 1;
         const centralBoost = this._bioCentral ? Config.bioCentralSpeedBoost : 1;
-        const ctBoost     = this._ctBoostTimer > 0 ? Config.comeTogetherSpeedBoost : 1;
+        const ctBoost      = this._ctBoostTimer > 0 ? Config.comeTogetherSpeedBoost : 1;
         return slow * orbitBoost * centralBoost * ctBoost;
     }
 
@@ -226,12 +226,12 @@ class Zombie extends GameObject {
         if (this._attackCooldown > 0) this._attackCooldown -= deltaTime;
         this._tickCTBoost(deltaTime);
 
-        // Come Together: movimiento gestionado externamente
-        if (this._comeTogether) {
+        if (this._comeTogether || this._hivemind) {
             this._actualizarContorno(true);
             this._setAnimation('move', true);
             return;
         }
+
         // Biomass: resistencia al push
         if (this._bioBall) {
             this._pushVx *= Config.bioPushResist;
