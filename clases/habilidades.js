@@ -408,6 +408,7 @@ class NecroticPulses {
 }
 
 // ── Hivemind ───────────────────────────────────────────────────────────────
+
 class Hivemind {
     constructor(player, zombies, worldContainer) {
         this._player  = player;
@@ -416,9 +417,8 @@ class Hivemind {
         this._timer   = Config.hivemindGatherDuration;
         this._muerto  = false;
         this._zombies = [];
-        this._offsets = []; // offsets fijos dentro del círculo para cada zombie
+        this._offsets = [];
 
-        // Zombies existentes más cercanos
         const existentes = [...zombies]
             .filter(z => !z._dead)
             .sort((a, b) =>
@@ -427,7 +427,6 @@ class Hivemind {
             )
             .slice(0, Config.hivemindZombieCount);
 
-        // Spawneamos zombies adicionales
         for (let i = 0; i < Config.hivemindSpawnCount; i++) {
             const angle  = (i / Config.hivemindSpawnCount) * Math.PI * 2;
             const spawnX = Utils.clamp(player.x + Math.cos(angle) * 200, 16, Config.worldWidth  - 16);
@@ -437,23 +436,26 @@ class Hivemind {
             existentes.push(z);
         }
 
-        this._zombies = existentes;
+        // Truncamos al máximo total
+        this._zombies = existentes.slice(0, Config.hivemindZombieCount);
 
-        // Calculamos posiciones evenly spaced dentro del círculo
-        // Usamos una distribución en espiral para llenar el área
+        // Distribución uniforme dentro del anillo (entre inner e inner+width)
         const total = this._zombies.length;
+        const inner = Config.hivemindRingInner;
+        const outer = inner + Config.hivemindRingWidth;
+
         for (let i = 0; i < total; i++) {
-            const r     = Config.hivemindRadius * 0.5 * Math.sqrt(i / total);
-            const angle = i * 2.399963; // golden angle en radianes para distribución uniforme
+            // Distribuimos por área: r va de inner a outer, con más zombies hacia afuera
+            const t     = i / total;
+            const r     = Math.sqrt(t * (outer * outer - inner * inner) + inner * inner);
+            const angle = i * 2.399963; // golden angle
             this._offsets.push({
                 x: Math.cos(angle) * r,
                 y: Math.sin(angle) * r,
             });
         }
 
-        for (const z of this._zombies) {
-            z._hivemind = true;
-        }
+        for (const z of this._zombies) z._hivemind = true;
 
         player._hivemindActive = true;
         if (player.sprite) player.sprite.tint = 0xaaffaa;
@@ -480,7 +482,6 @@ class Hivemind {
             const z = this._zombies[i];
             if (z._dead) continue;
 
-            // Target: posición del jugador + offset del círculo
             const targetX = this._player.x + this._offsets[i].x;
             const targetY = this._player.y + this._offsets[i].y;
             const dx      = targetX - z.x;
@@ -503,96 +504,47 @@ class Hivemind {
     }
 
     _updateActive(delta) {
-        const game = Game.instance;
+        const game        = Game.instance;
+        const seconds      = delta / 60; // delta está en frames, convertimos a fracción de segundo
+        const infectStep   = Config.hivemindContactInfectRate * seconds;
+        const damageStep   = Config.hivemindContactDamageRate * seconds;
 
         for (let i = 0; i < this._zombies.length; i++) {
             const z = this._zombies[i];
             if (z._dead) continue;
 
-            // Mimican la posición del jugador + su offset fijo
             z.x = this._player.x + this._offsets[i].x;
             z.y = this._player.y + this._offsets[i].y;
 
-            // Gestionan su propio ataque
-            if (z._attackCooldown > 0) z._attackCooldown -= delta;
-
-            if (!z._isAttacking && z._attackCooldown <= 0) {
-                // Buscamos target en rango de ataque
-                let target   = null;
-                let bestDist = Config.zombieAttackRange;
-
-                for (const h of (game?.humans || [])) {
-                    if (h._infected || h._turning) continue;
-                    const d = Utils.distance(z.x, z.y, h.x, h.y);
-                    if (d < bestDist) { bestDist = d; target = h; }
-                }
-                for (const cop of (game?.policia || [])) {
-                    if (cop._dead) continue;
-                    const d = Utils.distance(z.x, z.y, cop.x, cop.y);
-                    if (d < bestDist) { bestDist = d; target = cop; }
-                }
-
-                if (target) {
-                    z._isAttacking    = true;
-                    z._attackCooldown = Config.hivemindAttackCooldown;
-                    z._setAnimation?.('attack', false);
-
-                    const captured = target;
-                    const wc       = this._wc;
-                    const allZombies = game?.zombies || [];
-
-                    if (z.sprite) {
-                        z.sprite.onComplete = () => {
-                            z._isAttacking = false;
-                            z._setAnimation?.('move', true);
-                            z.sprite.onComplete = null;
-
-                            // Verificamos distancia final
-                            const finalDist = Utils.distance(z.x, z.y, captured.x, captured.y);
-                            if (finalDist >= Config.zombieAttackRange + 20) return;
-
-                            if (captured.startInfection) {
-                                if (captured instanceof Peleador) {
-                                    captured._infeccionAcum = (captured._infeccionAcum || 0) + 1;
-                                    captured._actualizarBarraInfeccion?.();
-                                    if (captured._infeccionAcum >= Config.brawlerInfectHits) {
-                                        captured._infeccionAcum = 0;
-                                        captured.startInfection(wc, allZombies);
-                                    }
-                                } else {
-                                    captured.startInfection(wc, allZombies);
-                                }
-                            } else {
-                                captured.takeDamage?.();
-                            }
-                        };
+            // Contacto con humanos
+            for (const h of (game?.humans || [])) {
+                if (h._infected) continue;
+                if (Utils.distance(z.x, z.y, h.x, h.y) < Config.zombieAttackRange) {
+                    const umbral = (h instanceof Peleador) ? Config.brawlerInfectHits : Config.daggerHitsToInfect;
+                    h._infeccionAcum = (h._infeccionAcum || 0) + infectStep * umbral;
+                    h._actualizarBarraInfeccion?.();
+                    if (h._infeccionAcum >= umbral) {
+                        h._infeccionAcum = 0;
+                        h.startInfection(this._wc, game?.zombies || []);
                     }
                 }
             }
 
-            // Orientación hacia el target más cercano o hacia afuera
-            let nearestForFlip = null, nearestFlipDist = Config.zombieSeekRange;
-            for (const h of (game?.humans || [])) {
-                if (h._infected) continue;
-                const d = Utils.distance(z.x, z.y, h.x, h.y);
-                if (d < nearestFlipDist) { nearestFlipDist = d; nearestForFlip = h; }
-            }
+            // Contacto con enemigos
             for (const cop of (game?.policia || [])) {
                 if (cop._dead) continue;
-                const d = Utils.distance(z.x, z.y, cop.x, cop.y);
-                if (d < nearestFlipDist) { nearestFlipDist = d; nearestForFlip = cop; }
+                if (Utils.distance(z.x, z.y, cop.x, cop.y) < Config.zombieAttackRange) {
+                    cop._hits -= damageStep * cop._maxHits;
+                    cop._actualizarBarraVida?.();
+                    if (cop._hits <= 0) cop._dead = true;
+                }
             }
 
-            if (nearestForFlip) {
-                z.headingX = nearestForFlip.x - z.x;
-                z.headingY = nearestForFlip.y - z.y;
-            } else {
-                z.headingX = this._offsets[i].x;
-                z.headingY = this._offsets[i].y;
-            }
+            // Orientación: hacia afuera del jugador (mantiene la forma del anillo visualmente coherente)
+            z.headingX = this._offsets[i].x;
+            z.headingY = this._offsets[i].y;
 
-            if (!z._isAttacking) z._setAnimation?.('move', true);
-
+            z._setAnimation?.('move', true);
             z.flipSprite?.();
             z._actualizarContorno?.(true);
             z.container.x = z.x;

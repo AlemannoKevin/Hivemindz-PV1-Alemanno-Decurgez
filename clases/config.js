@@ -141,16 +141,17 @@ const Config = {
     necroticDashRedux:        0.25,  // multiplicador de cooldown de dash cuando ON
 
     // ── Hivemind ──────────────────────────────────────────────────────────
-    hivemindRadius:           100,   // radio del anillo alrededor del jugador
-    hivemindBandWidth:        50,    // grosor del anillo
-    hivemindGatherDuration:   150,   // frames de fase de gather (2.5s)
-    hivemindActiveDuration:   500,   // frames de fase activa
-    hivemindCooldown:         600,   // frames de cooldown (10s)
-    hivemindGatherSpeed:      4.0,   // velocidad de gather
-    hivemindActiveSpeed:      4.0,   // velocidad del jugador y zombies en fase activa
-    hivemindAttackCooldown:   30,    // cooldown de ataque reducido en fase activa
-    hivemindSpawnCount:       25,    // zombies que spawna la habilidad
-    hivemindZombieCount:      25,    // máximo zombies del anillo (existentes)
+    hivemindRingInner:        100,   // distancia mínima del anillo al jugador
+    hivemindRingWidth:        100,   // grosor del anillo
+    hivemindGatherDuration:   150,
+    hivemindActiveDuration:   600,
+    hivemindCooldown:         600,
+    hivemindGatherSpeed:      5.0,
+    hivemindActiveSpeed:      4.0,
+    hivemindSpawnCount:       25,
+    hivemindZombieCount:      50,    // máximo total de zombies en el anillo
+    hivemindContactInfectRate: 0.2,  // % de infección por segundo en contacto
+    hivemindContactDamageRate: 0.2,  // % de vida por segundo en contacto
 
     // ── Elite Reinforcements ──────────────────────────────────────────────
     eliteCount:               5,     // zombies spawneados
