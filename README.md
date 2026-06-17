@@ -10,3 +10,7 @@ Repositorio del juego Hivemindz! creado por Alemanno y Decurgez para la materia 
 -LMB: Ataque de horda.
 
 -Espacio: Dash.
+
+Link de Github Pages:
+
+https://alemannokevin.github.io/Hivemindz-PV1-Alemanno-Decurgez/
