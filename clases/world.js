@@ -1,8 +1,9 @@
 const World = {
     
     buildBackground(worldContainer) {
-        const tex1 = PIXI.Assets.get('testBackground');
-        const tex2 = PIXI.Assets.get('testBackground2');
+        const atlas = PIXI.Assets.get('worldObjects');
+        const tex1  = atlas.textures['testBackground.png'];
+        const tex2  = atlas.textures['testBackground2.png'];
 
         const tileW = tex1.width  * 1.5;
         const tileH = tex1.height * 1.5;

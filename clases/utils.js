@@ -45,7 +45,7 @@ const Utils = {
         const instance = Game.instance;
         if (!instance) return { x: 0, y: 0 };
 
-        const obstacles = [instance.obstacle, ...(instance._obstacles || [])];
+        const obstacles = instance._obstacles || [];
         for (const obs of obstacles) {
             if (!obs) continue;
             const f = Utils.repelFromPoint(entityX, entityY, obs.x, obs.y, radius, force);

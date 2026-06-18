@@ -165,11 +165,12 @@ const Config = {
     upgradeZombieCap:         200,   // cap de zombies en waves mode
 
     // ── HUD upgrade screen ────────────────────────────────────────────────
-    upgradeCardWidth:         220,
-    upgradeCardFontTitle:     15,
-    upgradeCardFontDesc:      11,
-    upgradeCardFontType:      11,
-    upgradeScreenTitleSize:   28,
+    
+    upgradeCardWidth:         320,
+    upgradeCardFontTitle:     22,
+    upgradeCardFontDesc:      15,
+    upgradeCardFontType:      14,
+    upgradeScreenTitleSize:   40,
 
     // ── Waves HUD ─────────────────────────────────────────────────────────
     waveCounterFontSize:      18,
@@ -221,4 +222,7 @@ const Config = {
 
     // ── Timer de inicio ───────────────────────────────────────────────────
     startTimerDuration: 900,
+    fixedStepMS:       16.6667,  // duración de un paso de simulación (60 pasos/seg)
+    maxFrameTimeMS:    250,      // tope de tiempo real acumulable por frame (evita catch-up masivo)
+    maxStepsPerFrame:  5,        // máximo de pasos de simulación por frame de render
 };

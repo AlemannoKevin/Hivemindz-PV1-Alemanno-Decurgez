@@ -73,13 +73,7 @@ class Game {
         document.body.appendChild(this.app.view);
 
         await PIXI.Assets.load([
-            { alias: 'testBackground',  src: 'testBackground.png'  },
-            { alias: 'testBackground2', src: 'testBackground2.png' },
-            { alias: 'ruinedCar1',      src: 'ruinedCar1.png'      },
-            { alias: 'ruinedCar2',      src: 'ruinedCar2.png'      },
-            { alias: 'ruinedCar3',      src: 'ruinedCar3.png'      },
-            { alias: 'ruinedCar4',      src: 'ruinedCar4.png'      },
-            { alias: 'ruinedCar5',      src: 'ruinedCar5.png'      },
+            { alias: 'worldObjects', src: 'sprites/worldObjects.json' },
         ]);
 
         this.worldContainer = new PIXI.Container();
@@ -87,21 +81,24 @@ class Game {
         World.buildBackground(this.worldContainer);
 
         this._obstacles = [
-            new Obstacle(Config.worldWidth * 0.15, Config.worldHeight * 0.2,  this.worldContainer, 'ruinedCar2'),
-            new Obstacle(Config.worldWidth * 0.8,  Config.worldHeight * 0.15, this.worldContainer, 'ruinedCar1'),
-            new Obstacle(Config.worldWidth * 0.25, Config.worldHeight * 0.75, this.worldContainer, 'ruinedCar2'),
-            new Obstacle(Config.worldWidth * 0.75, Config.worldHeight * 0.8,  this.worldContainer, 'ruinedCar1'),
-            new Obstacle(Config.worldWidth * 0.5,  Config.worldHeight * 0.2,  this.worldContainer, 'ruinedCar2'),
-            new Obstacle(Config.worldWidth * 0.6,  Config.worldHeight * 0.65, this.worldContainer, 'ruinedCar1'),
-            new Obstacle(Config.worldWidth * 0.10, Config.worldHeight * 0.50, this.worldContainer, 'ruinedCar3'), 
-            new Obstacle(Config.worldWidth * 0.90, Config.worldHeight * 0.50, this.worldContainer, 'ruinedCar3'), 
-            new Obstacle(Config.worldWidth * 0.50, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar3'), 
-            new Obstacle(Config.worldWidth * 0.35, Config.worldHeight * 0.40, this.worldContainer, 'ruinedCar4'), 
-            new Obstacle(Config.worldWidth * 0.65, Config.worldHeight * 0.35, this.worldContainer, 'ruinedCar4'), 
-            new Obstacle(Config.worldWidth * 0.45, Config.worldHeight * 0.55, this.worldContainer, 'ruinedCar4'), 
-            new Obstacle(Config.worldWidth * 0.10, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar5'),
-            new Obstacle(Config.worldWidth * 0.90, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar5'),
-            new Obstacle(Config.worldWidth * 0.20, Config.worldHeight * 0.35, this.worldContainer, 'ruinedCar5')
+            new Obstacle(Config.worldWidth * 0.15, Config.worldHeight * 0.2,  this.worldContainer, 'ruinedCar2.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.8,  Config.worldHeight * 0.15, this.worldContainer, 'ruinedCar1.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.25, Config.worldHeight * 0.75, this.worldContainer, 'ruinedCar2.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.75, Config.worldHeight * 0.8,  this.worldContainer, 'ruinedCar1.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.5,  Config.worldHeight * 0.2,  this.worldContainer, 'ruinedCar2.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.6,  Config.worldHeight * 0.65, this.worldContainer, 'ruinedCar1.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.10, Config.worldHeight * 0.50, this.worldContainer, 'ruinedCar3.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.90, Config.worldHeight * 0.50, this.worldContainer, 'ruinedCar3.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.50, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar3.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.35, Config.worldHeight * 0.40, this.worldContainer, 'ruinedCar4.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.65, Config.worldHeight * 0.35, this.worldContainer, 'ruinedCar4.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.45, Config.worldHeight * 0.55, this.worldContainer, 'ruinedCar4.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.10, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar5.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.90, Config.worldHeight * 0.85, this.worldContainer, 'ruinedCar5.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.20, Config.worldHeight * 0.35, this.worldContainer, 'ruinedCar5.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.85, Config.worldHeight * 0.30, this.worldContainer, 'ruinedCar6.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.30, Config.worldHeight * 0.60, this.worldContainer, 'ruinedCar6.png', Config.obstacleHitboxSize, 140, 90),
+            new Obstacle(Config.worldWidth * 0.70, Config.worldHeight * 0.10, this.worldContainer, 'ruinedCar6.png', Config.obstacleHitboxSize, 140, 90)
         ];
 
         Input.init();
@@ -118,7 +115,8 @@ class Game {
         this._spawnPolicia();
 
         this.bulletsPolice = [];
-        this.app.ticker.add(delta => this._tick(delta));
+        this._accumulator = 0;
+        this.app.ticker.add(() => this._tickFixedStep());
 
         window.addEventListener('resize', () => this.app.renderer.resize(window.innerWidth, window.innerHeight));
         window.addEventListener('wheel',  e => this.camera.ajustarZoom(e.deltaY > 0 ? 1 : -1));
@@ -232,8 +230,23 @@ class Game {
             this.bullets.push(new Bala(this.player.x, this.player.y, angle, this.worldContainer));
         }
     }
+    
+    // ── Fixed timestep ───────────────────────────────────────────────────
+    _tickFixedStep() {
+        let frameTime = this.app.ticker.deltaMS;
+        frameTime = Math.min(frameTime, Config.maxFrameTimeMS);
+        this._accumulator += frameTime;
+
+        let pasos = 0;
+        while (this._accumulator >= Config.fixedStepMS && pasos < Config.maxStepsPerFrame) {
+            this._tick(1);
+            this._accumulator -= Config.fixedStepMS;
+            pasos++;
+        }
+    }
 
     // ── Tick principal ────────────────────────────────────────────────────
+
     _tick(delta) {
         if (this._paused || !this._gameMode) return;
 
@@ -665,9 +678,9 @@ class Game {
             const div = document.createElement('div');
             div.style.cssText = `
                 width:${Config.upgradeCardWidth}px;
-                padding:24px 20px;
+                padding:32px 28px;
                 border:2px solid ${color};
-                border-radius:12px;
+                border-radius:14px;
                 background:rgba(${alpha});
                 cursor:pointer;
                 text-align:center;

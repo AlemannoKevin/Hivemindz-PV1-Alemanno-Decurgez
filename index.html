@@ -52,6 +52,10 @@
             word-break: break-word;
             line-height: 1.3;
             font-size: 9px;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 6px 10px;
         }
         .cd-circle-svg {
             position: relative;
@@ -120,10 +124,15 @@
     </div>
 
     <!-- ── HUD izquierda: salud + XP ───────────────────────────────────── -->
+    
     <div id="hud-left" style="
         display:none; position:fixed; top:20px; left:20px;
         flex-direction:column; gap:8px;
         z-index:10; pointer-events:none;
+        background:rgba(0,0,0,0.55);
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:10px;
+        padding:10px 14px;
     ">
         <div class="hud-bar-wrap">
             <div id="label-health" class="hud-bar-label">HEALTHY</div>
@@ -181,7 +190,7 @@
     <div id="population-bar-wrap" style="
         display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
         z-index:20; pointer-events:none;
-        background:transparent;
+        background:rgba(0,0,0,0.55);
         border:1px solid rgba(255,255,255,0.15);
         border-radius:10px;
         padding:6px 14px 8px;
@@ -213,20 +222,25 @@
         background:rgba(0,0,0,0.55);
         border:1px solid rgba(255,255,255,0.15);
         border-radius:10px;
-        padding:6px 20px;
+        padding:8px 24px;
     ">TRANSFORMING IN: 15s</div>
 
     <!-- ── Info de waves ───────────────────────────────────────────────── -->
+    
     <div id="wave-counter" style="
-        display:none; position:fixed; top:100px; left:50%; transform:translateX(-50%);
+        display:none; position:fixed; top:42px; left:50%; transform:translateX(-50%);
         font-family:monospace; font-weight:bold;
         color:#fff; letter-spacing:3px;
         -webkit-text-stroke:0.5px #000;
         text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
         z-index:10; pointer-events:none;
         white-space:nowrap;
+        background:rgba(0,0,0,0.55);
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:10px;
+        padding:6px 20px;
     ">WAVE 1/9</div>
-
+    
     <!-- ── Pantallas de estado ──────────────────────────────────────────── -->
     <div id="death-screen" style="
         display:none; position:fixed; inset:0;
@@ -235,8 +249,8 @@
         align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:100;
     ">
         <div>YOU DIED</div>
-        <div style="font-size:16px;color:#aaa;letter-spacing:2px;">the infection ends here</div>
-        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:14px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#ff4444;border:2px solid #ff4444;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
+        <div style="font-size:32px;color:#aaa;letter-spacing:2px;">the infection ends here</div>
+        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#ff4444;border:2px solid #ff4444;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
 
     <div id="victory-screen" style="
@@ -246,8 +260,8 @@
         align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:100;
     ">
         <div>YOU WIN</div>
-        <div style="font-size:16px;color:#aaa;letter-spacing:2px;">the world is yours</div>
-        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:14px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
+        <div style="font-size:32px;color:#aaa;letter-spacing:2px;">the world is yours</div>
+        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
 
     <div id="upgrade-screen" style="
@@ -256,7 +270,7 @@
         align-items:center; justify-content:center; flex-direction:column; gap:32px; z-index:200;
     ">
         <div id="upgrade-title" style="font-weight:bold;letter-spacing:4px;color:#69f0ae;">EVOLVE</div>
-        <div style="font-size:13px;color:#aaa;letter-spacing:2px;">choose one ability</div>
+        <div id="upgrade-subtitle" style="color:#aaa;letter-spacing:2px;">choose one ability</div>
         <div id="upgrade-cards" style="display:flex;gap:32px;"></div>
     </div>
 
@@ -314,6 +328,7 @@
             if (htrack) htrack.style.width = hw;
 
             document.getElementById('upgrade-title').style.fontSize = Config.upgradeScreenTitleSize + 'px';
+            document.getElementById('upgrade-subtitle').style.fontSize = (Config.upgradeScreenTitleSize * 0.5) + 'px';
             const wc = document.getElementById('wave-counter');
             if (wc) wc.style.fontSize = Config.waveCounterFontSize + 'px';
         }

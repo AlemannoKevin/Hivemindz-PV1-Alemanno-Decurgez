@@ -89,7 +89,6 @@ class HumanoFleeState {
         humano._fleeTimer    = Config.humanFleeFrames;
         humano._fleeCooldown = Config.humanFleeCooldown || 120;
         humano.exclamation.visible = true;
-        humano.sprite.tint = 0xff8a65;
     }
 
     update(humano, context) {
@@ -114,7 +113,6 @@ class HumanoFleeState {
 
     exit(humano) {
         humano.exclamation.visible = false;
-        humano.sprite.tint = 0xffffff;
     }
 }
 

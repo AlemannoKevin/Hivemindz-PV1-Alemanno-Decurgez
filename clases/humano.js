@@ -38,7 +38,7 @@ class Humano extends GameObject {
     _buildExclamation() {
         this.exclamation = new PIXI.Text('!', {
             fontFamily: 'monospace',
-            fontSize:   16,
+            fontSize:   32,
             fontWeight: 'bold',
             fill:       0xff3333,
             dropShadow: true,
