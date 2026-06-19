@@ -297,8 +297,8 @@ class PeleadorAttackState {
             const progress = frame / frames;
             const alpha    = 1 - progress;
             ring.clear();
-            ring.lineStyle(2, 0xffee58, alpha);
-            ring.beginFill(0xffee58, alpha * 0.15);
+            ring.lineStyle(2, 0xff5e00, alpha);
+            ring.beginFill(0xff5e00, alpha * 0.15);
             ring.drawCircle(cx, cy, Config.brawlerBatRange * progress);
             ring.endFill();
             if (frame < frames) requestAnimationFrame(animate);

@@ -59,7 +59,7 @@ class Policia extends GameObject {
 
     _crearBarraVida(maxHits) {
         this._maxHits = maxHits;
-        const { cont, fill } = this._crearBarra(-36, 0xff4444);
+        const { cont, fill } = this._crearBarra(-36, 0xff0000);
         this._barraVida = cont;
         this._barraFill = fill;
     }
@@ -78,7 +78,7 @@ class Policia extends GameObject {
         this._actualizarBarraVida();
 
         if (this.sprite) {
-            this.sprite.tint = 0xff4444;
+            this.sprite.tint = 0xff0000;
             setTimeout(() => {
                 if (!this._dead && this.sprite) this.sprite.tint = 0xffffff;
             }, 150);

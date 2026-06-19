@@ -75,10 +75,10 @@ class Player {
             const alpha    = 1 - progress;
             const radius   = Config.aoeRadius * progress;
             ring.clear();
-            ring.lineStyle(4, 0xccff66, alpha * 0.4);
+            ring.lineStyle(4, 0xf8ff00, alpha * 0.4);
             ring.drawCircle(px, py, radius + 6);
-            ring.lineStyle(2.5, 0x8bc34a, alpha);
-            ring.beginFill(0x8bc34a, alpha * 0.15);
+            ring.lineStyle(2.5, 0xf8ff00, alpha);
+            ring.beginFill(0xf8ff00, alpha * 0.15);
             ring.drawCircle(px, py, radius);
             ring.endFill();
             if (frame < Config.aoeFadeFrames) requestAnimationFrame(animar);
@@ -100,7 +100,7 @@ class Player {
             ? Config.necroticDmgMitig : 1;
         this.health -= mitig;
         if (this.sprite) {
-            this.sprite.tint = 0xff4444;
+            this.sprite.tint = 0xff0000;
             setTimeout(() => { if (this.sprite) this.sprite.tint = 0xffffff; }, 150);
         }
         if (this.health <= 0) this.dead = true;
@@ -142,7 +142,7 @@ class Player {
     _spawnDashTrail() {
         if (!this._worldContainer) return;
         const trail = new PIXI.Graphics();
-        trail.beginFill(0x69f0ae, 0.4);
+        trail.beginFill(0xf8ff00, 0.4);
         trail.drawRoundedRect(-10, -16, 20, 28, 4);
         trail.endFill();
         trail.x = this.x;

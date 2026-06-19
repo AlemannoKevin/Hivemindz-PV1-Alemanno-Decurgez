@@ -32,10 +32,10 @@ const Config = {
     brawlerInfectHits:   2,
 
     // ── Boids ─────────────────────────────────────────────────────────────
-    boidsSepRadius:    50,
-    boidsAliRadius:    80,
-    boidsCohRadius:    90,
-    boidsMaxNeighbors: 20,
+    boidsSepRadius:       50,
+    boidsAliRadius:       80,
+    boidsCohRadius:       90,
+    boidsMaxNeighbors:    20,
     boidsHumanWanderAli:  0.6,
     boidsHumanWanderCoh:  0.40,
     boidsHumanFleeAli:    1.2,
@@ -49,7 +49,7 @@ const Config = {
     playerDashSpeed:      18,
     playerDashDuration:   25,
     playerDashCooldown:   150,
-    playerBulletSpeed:    3.75,
+    playerBulletSpeed:    4.25,
     playerBulletCooldown: 100,
 
     // ── Zombies ───────────────────────────────────────────────────────────
@@ -186,15 +186,15 @@ const Config = {
     
     // ── HUD: colores ──────────────────────────────────────────────────────
     colorLMB:             '#ffee00',  // amarillo brillante para todas las LMB
-    colorRMB:             '#15ff00',  // verde brillante para todas las RMB
-    colorDash:            '#ffb74d',  // naranja para el dash
-    colorHealthFull:      '#850a0a',
-    colorHealthMid:       '#850a0a',
-    colorHealthLow:       '#184219',
-    colorXPBar:           '#0717f1',
-    colorPopHumans:       '#0fb2e4',  // azul claro
-    colorPopZombies:      '#2e7d32',  // verde oscuro
-    colorPopForces:       '#0c3583',  // azul oscuro
+    colorRMB:             '#91ff00',  // verde brillante para todas las RMB
+    colorDash:            '#9900ff',  // naranja para el dash
+    colorHealthFull:      '#ff0000',
+    colorHealthMid:       '#ff0000',
+    colorHealthLow:       '#ff0000',
+    colorXPBar:           '#ff3300',
+    colorPopHumans:       '#ff5e00',  
+    colorPopZombies:      '#99ff00',  
+    colorPopForces:       '#00beff',  
 
     // ── HUD: textos ───────────────────────────────────────────────────────
     labelHealth:            'HEALTH',

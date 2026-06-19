@@ -29,10 +29,10 @@ class Bala extends BalaBase {
     constructor(startX, startY, angle, worldContainer) {
         super(startX, startY, Config.playerBulletSpeed, angle, worldContainer);
         this.graphic = new PIXI.Graphics();
-        this.graphic.beginFill(0x69f0ae);
+        this.graphic.beginFill(0x91ff00);
         this.graphic.drawCircle(0, 0, 5);
         this.graphic.endFill();
-        this.graphic.lineStyle(1.5, 0xccff66, 0.6);
+        this.graphic.lineStyle(1.5, 0x91ff00, 0.6);
         this.graphic.drawCircle(0, 0, 9);
         worldContainer.addChild(this.graphic);
     }
@@ -81,10 +81,10 @@ class BalaPolicia extends BalaBase {
         this._damage    = damage;
         this._knockback = knockback;
         this.graphic = new PIXI.Graphics();
-        this.graphic.beginFill(0xffeb3b);
+        this.graphic.beginFill(0x00beff);
         this.graphic.drawCircle(0, 0, 4);  
         this.graphic.endFill();
-        this.graphic.lineStyle(1.5, 0xff8f00, 0.6);
+        this.graphic.lineStyle(1.5, 0x00beff, 0.6);
         this.graphic.drawCircle(0, 0, 6);
         worldContainer.addChild(this.graphic);
     }
@@ -121,11 +121,11 @@ class BalaPolicia extends BalaBase {
         zombie._hp    = (zombie._hp ?? 1) - this._damage * dmgMult;
 
         if (zombie.sprite) {
-            zombie.sprite.tint = 0xff4444;
+            zombie.sprite.tint = 0xff0000;
             setTimeout(() => {
                 if (!zombie._dead && zombie.sprite) {
                     if (zombie._ctBoostTimer > 0) {
-                        zombie.sprite.tint = 0xff4444;
+                        zombie.sprite.tint = 0xa600ff;
                     } else {
                         zombie.sprite.tint = 0xffffff;
                         // El glow amarillo lo maneja _actualizarContorno, no el tint
@@ -143,10 +143,10 @@ class BalaDagger extends BalaBase {
         super(startX, startY, Config.playerBulletSpeed * 1.8, angle, worldContainer);
         this._hitsMap = hitsMap;
         this.graphic  = new PIXI.Graphics();
-        this.graphic.beginFill(0xffb74d);
+        this.graphic.beginFill(0x91ff00);
         this.graphic.drawCircle(0, 0, 4);
         this.graphic.endFill();
-        this.graphic.lineStyle(1.5, 0xff8a00, 0.7);
+        this.graphic.lineStyle(1.5, 0x91ff00, 0.7);
         this.graphic.drawCircle(0, 0, 7);
         worldContainer.addChild(this.graphic);
     }
@@ -195,10 +195,10 @@ class BalaPit extends BalaBase {
     constructor(startX, startY, angle, worldContainer) {
         super(startX, startY, Config.playerBulletSpeed, angle, worldContainer);
         this.graphic = new PIXI.Graphics();
-        this.graphic.beginFill(0x33691e);
+        this.graphic.beginFill(0x91ff00);
         this.graphic.drawCircle(0, 0, 5);
         this.graphic.endFill();
-        this.graphic.lineStyle(1.5, 0x69f0ae, 0.7);
+        this.graphic.lineStyle(1.5, 0x91ff00, 0.7);
         this.graphic.drawCircle(0, 0, 9);
         worldContainer.addChild(this.graphic);
     }

@@ -77,8 +77,8 @@ class CharcoPit {
 
     _dibujar(alpha) {
         this.graphic.clear();
-        this.graphic.beginFill(0x33691e, alpha * 0.45);
-        this.graphic.lineStyle(2, 0x69f0ae, alpha * 0.6);
+        this.graphic.beginFill(0x91ff00, alpha * 0.45);
+        this.graphic.lineStyle(2, 0x91ff00, alpha * 0.6);
         this.graphic.drawCircle(this.x, this.y, Config.pitRadius);
         this.graphic.endFill();
     }
@@ -144,7 +144,7 @@ class ZombieProyectil {
             this.sprite = new PIXI.AnimatedSprite(zombieAnimations.move);
             this.sprite.anchor.set(0.5);
             this.sprite.animationSpeed = 0.3;
-            this.sprite.tint = 0xff2200;
+            this.sprite.tint = 0xf8ff00;
             this.sprite.play();
             this.container.addChild(this.sprite);
         }
@@ -183,7 +183,7 @@ class ZombieProyectil {
             }
         );
 
-        _animarRingColor(worldContainer, this.x, this.y, Config.combustionRadius, 0x69f0ae, 20);
+        _animarRingColor(worldContainer, this.x, this.y, Config.combustionRadius, 0xf8ff00, 20);
     }
 }
 
@@ -278,7 +278,7 @@ class ComeTogether {
 
         for (const z of this._zombies) z._comeTogether = true;
         player._comeTogether = true;
-        if (player.sprite) player.sprite.tint = 0x69f0ae;
+        if (player.sprite) player.sprite.tint = 0xf8ff00;
     }
 
     update(delta) {
@@ -338,14 +338,14 @@ class ComeTogether {
                 z._pushVy          = Math.sin(angle) * Config.comeTogetherForce;
                 z._ctBoostTimer    = Config.comeTogetherBoostDuration;
                 z._ctReducedAttackCD = true;
-                if (z.sprite) z.sprite.tint = 0xff4444;
+                if (z.sprite) z.sprite.tint = 0xa600ff;
             }
         }
 
         // 3 rings azules escalonados
         const maxR = Config.comeTogetherRadius * 3.9;
         [0, 6, 12].forEach(offset =>
-            _animarRingColor(this._wc, this._player.x, this._player.y, maxR, 0x4488ff, 30, offset)
+            _animarRingColor(this._wc, this._player.x, this._player.y, maxR, 0xf8ff00, 30, offset)
         );
     }
 }
@@ -380,8 +380,8 @@ class NecroticPulses {
             const alpha    = progress < 0.3 ? progress / 0.3 : 1 - ((progress - 0.3) / 0.7);
             const radius   = Config.necroticPulseRadius * (0.6 + progress * 0.4);
             ring.clear();
-            ring.lineStyle(3, 0x69f0ae, alpha * 0.9);
-            ring.beginFill(0x69f0ae, alpha * 0.12);
+            ring.lineStyle(3, 0x91ff00, alpha * 0.9);
+            ring.beginFill(0x91ff00, alpha * 0.12);
             ring.drawCircle(px, py, radius);
             ring.endFill();
             if (frame < frames) requestAnimationFrame(animar);
@@ -578,7 +578,7 @@ class EliteReinforcement {
             // Aplicamos los buffs de come together
             z._ctBoostTimer      = Config.eliteDuration;
             z._ctReducedAttackCD = true;
-            if (z.sprite) z.sprite.tint = 0xff4444;
+            if (z.sprite) z.sprite.tint = 0xa600ff;
 
             // Timer de vida propio
             z._eliteTimer = Config.eliteDuration;

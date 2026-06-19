@@ -695,8 +695,8 @@ class Game {
             return div;
         };
 
-        if (lmb) cards.appendChild(crearCard(lmb, '#69f0ae', '105,240,174,0.07'));
-        if (rmb) cards.appendChild(crearCard(rmb, '#ffb74d', '255,183,77,0.07'));
+        if (lmb) cards.appendChild(crearCard(lmb, '#ffee00', '255,238,0,0.07'));
+        if (rmb) cards.appendChild(crearCard(rmb, '#91ff00', '145,255,0,0.07'));
 
         this._paused = true;
         const screen = document.getElementById('upgrade-screen');

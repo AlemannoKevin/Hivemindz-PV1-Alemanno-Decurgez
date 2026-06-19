@@ -6,8 +6,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":179,"h":103},
-	"sourceSize": {"w":179,"h":103},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":179,"h":103}
 },
 "ruinedCar2.png":
 {
@@ -15,8 +14,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":156,"h":81},
-	"sourceSize": {"w":156,"h":81},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":156,"h":81}
 },
 "ruinedCar3.png":
 {
@@ -24,8 +22,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":132,"h":73},
-	"sourceSize": {"w":132,"h":73},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":132,"h":73}
 },
 "ruinedCar4.png":
 {
@@ -33,8 +30,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":131,"h":87},
-	"sourceSize": {"w":131,"h":87},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":131,"h":87}
 },
 "ruinedCar5.png":
 {
@@ -42,8 +38,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":146,"h":103},
-	"sourceSize": {"w":146,"h":103},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":146,"h":103}
 },
 "ruinedCar6.png":
 {
@@ -51,8 +46,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":147,"h":86},
-	"sourceSize": {"w":147,"h":86},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":147,"h":86}
 },
 "testBackground.png":
 {
@@ -60,8 +54,7 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
-	"sourceSize": {"w":512,"h":512},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":512,"h":512}
 },
 "testBackground2.png":
 {
@@ -69,9 +62,11 @@
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":512,"h":512},
-	"sourceSize": {"w":512,"h":512},
-	"anchor": {"x":0.5,"y":0.5}
+	"sourceSize": {"w":512,"h":512}
 }},
+"animations": {
+	"ruinedCar": ["ruinedCar1.png","ruinedCar2.png","ruinedCar3.png","ruinedCar4.png","ruinedCar5.png","ruinedCar6.png"]
+},
 "meta": {
 	"app": "https://www.codeandweb.com/texturepacker",
 	"version": "1.1",
@@ -79,6 +74,6 @@
 	"format": "RGBA8888",
 	"size": {"w":512,"h":1213},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:23f1bb2cbbc38d11b32c37c614d277e4:5d10a337cb32cd2a657758a33832e5a3:21728fe3dcd559caf448d5a717fa7220$"
+	"smartupdate": "$TexturePacker:SmartUpdate:f7c836060d0ae3c2f542808f9008ba72:6f5434fcb34fde27e3289c8c6512cc99:21728fe3dcd559caf448d5a717fa7220$"
 }
 }

@@ -38,7 +38,7 @@ class Humano extends GameObject {
     _buildExclamation() {
         this.exclamation = new PIXI.Text('!', {
             fontFamily: 'monospace',
-            fontSize:   32,
+            fontSize:   24,
             fontWeight: 'bold',
             fill:       0xff3333,
             dropShadow: true,
@@ -71,7 +71,7 @@ class Humano extends GameObject {
         let blinks = 0;
         const blinkInterval = setInterval(() => {
             if (this.sprite) {
-                this.sprite.tint = blinks % 2 === 0 ? 0x69f0ae : 0xe0c97f;
+                this.sprite.tint = blinks % 2 === 0 ? 0x99ff00: 0xffffff;
             }
             if (++blinks >= 8) {
                 clearInterval(blinkInterval);
@@ -84,7 +84,7 @@ class Humano extends GameObject {
     // ── Barra de infección ────────────────────────────────────────────────
     
     _crearBarraInfeccion() {
-        const { cont, fill } = this._crearBarra(-42, 0x69f0ae);
+        const { cont, fill } = this._crearBarra(-42, 0x99ff00);
         this._barraInfeccion = cont;
         this._barraFill      = fill;
     }
