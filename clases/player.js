@@ -142,7 +142,7 @@ class Player {
     _spawnDashTrail() {
         if (!this._worldContainer) return;
         const trail = new PIXI.Graphics();
-        trail.beginFill(0xf8ff00, 0.4);
+        trail.beginFill(0x9900ff, 0.5);
         trail.drawRoundedRect(-10, -16, 20, 28, 4);
         trail.endFill();
         trail.x = this.x;
@@ -219,13 +219,13 @@ class Player {
     _actualizarBarrasHUD() {
         const dashMax  = Config.playerDashCooldown * this._necroCD();
         const dashPct  = this._dashCooldown > 0 ? 1 - (this._dashCooldown / dashMax) : 1;
-        const r        = 50;
-        const circum   = +(2 * Math.PI * r).toFixed(2);
+        const r        = Config.hudCooldownRadius * 0.83;
+        const circum   = 2 * Math.PI * r;
 
         const arcDash = document.getElementById('arc-dash');
         if (arcDash) {
             arcDash.style.stroke           = Config.colorDash;
-            arcDash.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, dashPct)))).toFixed(2);
+            arcDash.style.strokeDashoffset = circum * (1 - Math.max(0, Math.min(1, dashPct)));
         }
 
         const lblDashC = document.getElementById('label-dash-center');

@@ -11,11 +11,11 @@ const HABILIDADES = [
     { id: 'dagger',       tipo: 'rmb', nombre: 'Putrified Daggers',
       desc: 'Burst de 3 proyectiles. Requiere varios impactos para infectar. Mayor daño a enemigos.' },
     { id: 'pit',          tipo: 'rmb', nombre: 'Poisonous Pit',
-      desc: 'Proyectil que deja un charco venenoso al impactar humano/enemigo. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.' },
+      desc: 'Proyectil que deja un charco venenoso al impactar un humano/enemigo. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.' },
     { id: 'elite',        tipo: 'rmb', nombre: 'Elite Reinforcements',
-      desc: 'Spawnea zombies élite alrededor del jugador. Los zombies desaparecen después de un tiempo.' },
+      desc: 'Spawnea zombies buffeados alrededor del jugador. Los zombies desaparecen después de un tiempo.' },
     { id: 'hivemind',     tipo: 'lmb', nombre: 'Hivemind',
-      desc: 'Zombies rodean al jugador, copiando sus movimientos. Buffs de velocidad para todos e inmunidad al daño para el jugador.' },
+      desc: 'Spawnea zombies alrededor del jugador que lo rodean, copiando sus movimientos. Los zombies infligen daño/infección por contacto. Buffs de velocidad para todos e inmunidad al daño para el jugador.' },
 ];
 
 function elegirHabilidades(yaElegidas) {
@@ -134,17 +134,34 @@ class ZombieProyectil {
         this._muerto = false;
 
         zombie.container.visible = false;
-        zombie._actualizarContorno?.(true);
 
         this.container = new PIXI.Container();
         this.container.x = this.x;
         this.container.y = this.y;
 
+        // Glow amarillo detrás, igual que el de zombies controlados por LMB
+        if (zombieAnimations.move) {
+            this._glowSprite = new PIXI.AnimatedSprite(zombieAnimations.move);
+            this._glowSprite.anchor.set(0.5);
+            this._glowSprite.animationSpeed = 0.3;
+            this._glowSprite.play();
+            this._glowSprite.tint = 0xffff00;
+            const colorMatrix = new PIXI.ColorMatrixFilter();
+            colorMatrix.matrix = [
+                0, 0, 0, 0, 1,
+                0, 0, 0, 0, 1,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 1, 0,
+            ];
+            this._glowSprite.filters = [colorMatrix];
+            this._glowSprite.scale.set(Config.controlledZombieScaleX, Config.controlledZombieScaleY);
+            this.container.addChild(this._glowSprite);
+        }
+
         if (zombieAnimations.move) {
             this.sprite = new PIXI.AnimatedSprite(zombieAnimations.move);
             this.sprite.anchor.set(0.5);
             this.sprite.animationSpeed = 0.3;
-            this.sprite.tint = 0xf8ff00;
             this.sprite.play();
             this.container.addChild(this.sprite);
         }
@@ -160,6 +177,15 @@ class ZombieProyectil {
         this.container.y = this.y;
         if (this.sprite) this.sprite.scale.x = this._vx >= 0 ? 1 : -1;
 
+        if (this._glowSprite && this.sprite) {
+            this._glowSprite.scale.x = this._vx >= 0
+                ? Config.controlledZombieScaleX
+                : -Config.controlledZombieScaleX;
+            if (this._glowSprite.currentFrame !== this.sprite.currentFrame) {
+                this._glowSprite.gotoAndStop(this.sprite.currentFrame);
+            }
+        }
+
         const explotar =
             this._distRecorrida >= Config.combustionPushDist ||
             allHumans.some(h  => !h._infected  && Utils.distance(this.x, this.y, h.x,   h.y)   < 20) ||
@@ -171,7 +197,6 @@ class ZombieProyectil {
     _explotar(allHumans, allPolicia, zombies, worldContainer) {
         this._muerto       = true;
         this._zombie._dead = true;
-        this._zombie._actualizarContorno?.(false);
         worldContainer.removeChild(this.container);
 
         _aplicarAUnidades(allHumans, allPolicia, this.x, this.y, Config.combustionRadius,

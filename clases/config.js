@@ -16,7 +16,7 @@ const Config = {
     obstacleRepelForce:  2.5,
 
     // ── Humanos ───────────────────────────────────────────────────────────
-    humanCount:      325,
+    humanCount:      250,
     humanWalkSpeed:  0.8,
     humanFleeSpeed:  1.75,
     humanFleeRange:  170,
@@ -43,13 +43,13 @@ const Config = {
 
     // ── Jugador ───────────────────────────────────────────────────────────
     playerMaxHealth:      14,
-    playerSpeed:          2.8,
+    playerSpeed:          2.9,
     aoeRadius:            175,
     aoeFadeFrames:        30,
     playerDashSpeed:      18,
     playerDashDuration:   25,
     playerDashCooldown:   150,
-    playerBulletSpeed:    4.25,
+    playerBulletSpeed:    4.5,
     playerBulletCooldown: 100,
 
     // ── Zombies ───────────────────────────────────────────────────────────
@@ -140,22 +140,22 @@ const Config = {
     necroticSlowToggle:       0.4,  // multiplicador de velocidad cuando está ON
     necroticDashRedux:        0.25,  // multiplicador de cooldown de dash cuando ON
 
-    // ── Hivemind ──────────────────────────────────────────────────────────
-    hivemindRingInner:        100,   // distancia mínima del anillo al jugador
-    hivemindRingWidth:        100,   // grosor del anillo
-    hivemindGatherDuration:   150,
-    hivemindActiveDuration:   600,
-    hivemindCooldown:         600,
-    hivemindGatherSpeed:      5.0,
-    hivemindActiveSpeed:      4.0,
-    hivemindSpawnCount:       25,
-    hivemindZombieCount:      50,    // máximo total de zombies en el anillo
-    hivemindContactInfectRate: 0.2,  // % de infección por segundo en contacto
-    hivemindContactDamageRate: 0.2,  // % de vida por segundo en contacto
+    // ── Habilidad: Hivemind ──────────────────────────────────────────────────────────
+    hivemindRingInner:         125,   // distancia mínima del anillo al jugador
+    hivemindRingWidth:         75,   // grosor del anillo
+    hivemindGatherDuration:    150,
+    hivemindActiveDuration:    500,
+    hivemindCooldown:          600,
+    hivemindGatherSpeed:       4.0,
+    hivemindActiveSpeed:       4.0,
+    hivemindSpawnCount:        25,
+    hivemindZombieCount:       50,    // máximo total de zombies en el anillo
+    hivemindContactInfectRate: 0.3,  // % de infección por segundo en contacto
+    hivemindContactDamageRate: 0.3,  // % de vida por segundo en contacto
 
-    // ── Elite Reinforcements ──────────────────────────────────────────────
-    eliteCount:               5,     // zombies spawneados
-    eliteDuration:            475,   // frames de vida
+    // ── Habilidad: Elite Reinforcements ──────────────────────────────────────────────
+    eliteCount:               4,     // zombies spawneados
+    eliteDuration:            500,   // frames de vida
     eliteCooldown:            450,   // frames de cooldown
 
     // ── Spawns post-upgrade ───────────────────────────────────────────────
@@ -216,9 +216,9 @@ const Config = {
     hudCooldownRadius:    50,    // radio de los círculos de cooldown en px
 
     // ── XP / niveles ──────────────────────────────────────────────────────
-    xpLevel1:             25,    // infectados para el primer nivel
-    xpLevel2:             125,   // infectados acumulados para el segundo nivel
-    xpLevel3:             225,   // infectados acumulados para el tercer nivel
+    xpLevel1:             20,    // infectados para el primer nivel
+    xpLevel2:             90,    // infectados acumulados para el segundo nivel
+    xpLevel3:             150,   // infectados acumulados para el tercer nivel
 
     // ── Timer de inicio ───────────────────────────────────────────────────
     startTimerDuration: 900,

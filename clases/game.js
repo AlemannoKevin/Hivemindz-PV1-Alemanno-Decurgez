@@ -160,6 +160,8 @@ class Game {
     }
 
     _onMouseDown(e) {
+        if (this._paused) return; // bloqueamos input mientras hay un menú abierto
+
         const mx = Mouse.worldX(this.camera.offsetX);
         const my = Mouse.worldY(this.camera.offsetY);
 
@@ -197,6 +199,10 @@ class Game {
             this._startTimerOn = false;
             document.getElementById('start-timer').style.display          = 'none';
             document.getElementById('population-bar-wrap').style.display  = 'flex';
+            if (this._waveMode) {
+                document.getElementById('wave-counter').style.display = 'block';
+                this._waveTimer = Config.waveDuration;
+            }
             return;
         }
     
@@ -299,6 +305,10 @@ class Game {
                 this._startTimerOn = false;
                 if (el) el.style.display = 'none';
                 document.getElementById('population-bar-wrap').style.display = 'flex';
+                if (this._waveMode) {
+                    document.getElementById('wave-counter').style.display = 'block';
+                    this._waveTimer = Config.waveDuration; // arranca recién ahora
+                }
                 if (!this.player.isZombie) this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
             }
     }
@@ -467,8 +477,8 @@ class Game {
     }
 
     _actualizarCirculos() {
-        const r          = 50;
-        const circum     = 2 * Math.PI * r; // 314.16
+        const r      = Config.hudCooldownRadius * 0.83;
+        const circum = 2 * Math.PI * r;
 
         // ── LMB ──────────────────────────────────────────────────────────
         const arcLMB   = document.getElementById('arc-lmb');
@@ -494,7 +504,7 @@ class Game {
             } else if (this._lmbUpgrade === 'hivemind') {
                 pctLMB = this._hivemindCD > 0 ? 1 - (this._hivemindCD / Config.hivemindCooldown) : 1;
             }
-            arcLMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctLMB)))).toFixed(2);
+            arcLMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctLMB))));
 
             if (lblLMB) lblLMB.textContent = this._lmbUpgrade
                 ? (HABILIDADES.find(h => h.id === this._lmbUpgrade)?.nombre || 'Rally of Death')
@@ -738,6 +748,15 @@ class Game {
     }
 
     _tickWaves(delta) {
+        if (this._waveTimer === null) return; // esperando que termine la transformación
+
+        if (this._waveNumber >= Config.waveTotalWaves) {
+            this._checarVictoriaWaves();
+            const counter = document.getElementById('wave-counter');
+            if (counter) counter.textContent = `WAVE ${this._waveNumber}/${Config.waveTotalWaves} — FINAL`;
+            return;
+        }
+
         this._waveTimer        -= delta;
         this._waveUpgradeTimer -= delta;
 
@@ -749,12 +768,6 @@ class Game {
         if (this._waveTimer <= 0) {
             this._waveNumber++;
             this._waveTimer = Config.waveDuration;
-
-            if (this._waveNumber > Config.waveTotalWaves) {
-                // Última wave: no spawneamos más, esperamos que el jugador limpie el mapa
-                this._waveNumber = Config.waveTotalWaves; // no sigue subiendo
-                // La victoria se chequea abajo
-            }
 
             const cantidad = Math.floor(Config.waveEnemyBase * (1 + Config.waveEnemyGrowth * (this._waveNumber - 1)));
             for (let i = 0; i < cantidad; i++) {
@@ -777,16 +790,19 @@ class Game {
             }
         }
 
-        // Victoria en waves: última wave completada + mapa limpio
+        this._checarVictoriaWaves();
+
+        const counter = document.getElementById('wave-counter');
+        if (counter) counter.textContent =
+            `WAVE ${this._waveNumber}/${Config.waveTotalWaves} — ${Math.ceil(this._waveTimer / 60)}s`;
+    }
+
+    _checarVictoriaWaves() {
         if (this._waveNumber >= Config.waveTotalWaves &&
             this.player.isZombie &&
             this.humans.every(h => h._infected) &&
             this.policia.length === 0) {
             this._mostrarVictoria();
         }
-
-        const counter = document.getElementById('wave-counter');
-        if (counter) counter.textContent =
-            `WAVE ${this._waveNumber}/${Config.waveTotalWaves} — ${Math.ceil(this._waveTimer / 60)}s`;
     }
 }

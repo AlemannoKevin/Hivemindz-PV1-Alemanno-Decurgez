@@ -121,6 +121,17 @@
             " onmouseover="this.style.background='rgba(145,255,0, 0.15)'"
                onmouseout="this.style.background='transparent'">WAVES MODE</button>
         </div>
+        <div style="
+            position:fixed; bottom:24px; right:28px;
+            font-family:monospace; font-size:20px;
+            color:rgba(255,255,255,0.6);
+            letter-spacing:1px; line-height:2;
+        ">
+            <div><span style="display:inline-block;width:90px;color:#ff8900;font-weight:bold;">WASD:</span>Movement</div>
+            <div><span style="display:inline-block;width:90px;color:#ffee00;font-weight:bold;">LMB:</span>Horde control abilities</div>
+            <div><span style="display:inline-block;width:90px;color:#91ff00;font-weight:bold;">RMB:</span>Infection abilities</div>
+            <div><span style="display:inline-block;width:90px;color:#9900ff;font-weight:bold;">SPACE:</span>Dash</div>
+        </div>
     </div>
 
     <!-- ── HUD izquierda: salud + XP ───────────────────────────────────── -->
@@ -175,7 +186,6 @@
             </div>
         </div>
         <div class="cd-circle-wrap">
-            <div id="label-dash-ability" class="cd-circle-label" style="width:80px;">DASH</div>
             <div class="cd-circle-svg">
                 <svg id="svg-dash" width="120" height="60" style="transform:rotate(-90deg);">
                     <circle cx="60" cy="60" r="50" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
@@ -215,7 +225,7 @@
     <div id="start-timer" style="
         display:none; position:fixed; top:18px; left:50%; transform:translateX(-50%);
         font-family:monospace; font-size:22px; font-weight:bold;
-        color:#fff; letter-spacing:3px;
+        color:#baff00; letter-spacing:3px;
         -webkit-text-stroke:0.5px #000;
         text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
         z-index:30; pointer-events:none;
@@ -228,7 +238,7 @@
     <!-- ── Info de waves ───────────────────────────────────────────────── -->
     
     <div id="wave-counter" style="
-        display:none; position:fixed; top:42px; left:50%; transform:translateX(-50%);
+        display:none; position:fixed; top:85px; left:50%; transform:translateX(-50%);
         font-family:monospace; font-weight:bold;
         color:#baff00; letter-spacing:3px;
         -webkit-text-stroke:0.5px #000;
@@ -249,7 +259,7 @@
         align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:100;
     ">
         <div>YOU DIED</div>
-        <div style="font-size:32px;color:#ff4444;letter-spacing:2px;">the infection ends here</div>
+        <div style="font-size:32px;color:#ff4444;letter-spacing:2px;">The infection ends here</div>
         <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#ff4444;border:2px solid #ff4444;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
 
@@ -260,7 +270,7 @@
         align-items:center; justify-content:center; flex-direction:column; gap:16px; z-index:100;
     ">
         <div>YOU WIN</div>
-        <div style="font-size:32px;color:#ff8900;letter-spacing:2px;">the world is yours</div>
+        <div style="font-size:32px;color:#ff8900;letter-spacing:2px;">The city is yours</div>
         <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
 
@@ -270,7 +280,7 @@
         align-items:center; justify-content:center; flex-direction:column; gap:32px; z-index:200;
     ">
         <div id="upgrade-title" style="font-weight:bold;letter-spacing:4px;color:#ff8900;">EVOLVE</div>
-        <div id="upgrade-subtitle" style="color:#ff8900;letter-spacing:2px;">choose one ability</div>
+        <div id="upgrade-subtitle" style="color:#ff8900;letter-spacing:2px;">Choose one ability</div>
         <div id="upgrade-cards" style="display:flex;gap:32px;"></div>
     </div>
 
@@ -281,10 +291,10 @@
             document.getElementById('start-timer').style.display = 'block';
             Game.instance._gameMode = mode;
             if (mode === 'waves') {
-                document.getElementById('wave-counter').style.display = 'block';
                 Game.instance._waveMode         = true;
                 Game.instance._waveNumber       = 1;
-                Game.instance._waveTimer        = Config.waveDuration;
+                // El timer de wave NO arranca todavía — se setea cuando termina la transformación
+                Game.instance._waveTimer        = null;
                 Game.instance._waveUpgradeTimer = Config.waveUpgradeEvery;
                 Game.instance._mostrarUpgrade();
             }
@@ -296,7 +306,7 @@
             const r      = Config.hudCooldownRadius;
             const size   = r * 2;
             const rInner = r * 0.83;
-            const circ   = +(2 * Math.PI * rInner).toFixed(2);
+            const circ   = +(2 * Math.PI * rInner);
 
             ['lmb', 'rmb', 'dash'].forEach(id => {
                 const svg = document.getElementById('svg-' + id);
