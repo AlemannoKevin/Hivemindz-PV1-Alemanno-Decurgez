@@ -12,7 +12,7 @@ const HABILIDADES = [
       desc: 'Burst de 3 proyectiles. Requiere varios impactos para infectar. Mayor daño a enemigos.' },
     { id: 'pit',          tipo: 'rmb', nombre: 'Poisonous Pit',
       desc: 'Proyectil que deja un charco venenoso al impactar un humano/enemigo. Frena, bloquea ataques y aplica pulsos de daño/infección durante 4 segundos.' },
-    { id: 'elite',        tipo: 'rmb', nombre: 'Elite Reinforcements',
+    { id: 'elite',        tipo: 'rmb', nombre: 'Elite Invoking',
       desc: 'Spawnea zombies buffeados alrededor del jugador. Los zombies desaparecen después de un tiempo.' },
     { id: 'hivemind',     tipo: 'lmb', nombre: 'Hivemind',
       desc: 'Spawnea zombies alrededor del jugador que lo rodean, copiando sus movimientos. Los zombies infligen daño/infección por contacto. Buffs de velocidad para todos e inmunidad al daño para el jugador.' },
