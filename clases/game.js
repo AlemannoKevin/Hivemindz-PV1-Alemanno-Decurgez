@@ -541,8 +541,10 @@ class Game {
             
         }
 
-        const lblDash = document.getElementById('label-dash-ability');
-        if (lblDash) lblDash.textContent = Config.labelDash;
+        const lblDash  = document.getElementById('label-dash-ability');
+        const lblDashC = document.getElementById('label-dash-center');
+        if (lblDash)  lblDash.textContent  = Config.labelDash;
+        if (lblDashC) lblDashC.textContent = 'SPACE';
     }
 
     _tickRMBAbilities(delta) {

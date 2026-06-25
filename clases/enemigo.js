@@ -59,7 +59,7 @@ class Policia extends GameObject {
 
     _crearBarraVida(maxHits) {
         this._maxHits = maxHits;
-        const { cont, fill } = this._crearBarra(-36, 0xff0000);
+        const { cont, fill } = this._crearBarra(-36, 0x00beff);
         this._barraVida = cont;
         this._barraFill = fill;
     }

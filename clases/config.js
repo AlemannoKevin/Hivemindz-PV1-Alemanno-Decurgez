@@ -185,35 +185,35 @@ const Config = {
     waveSwatRatio:      0.3,
     
     // ── HUD: colores ──────────────────────────────────────────────────────
-    colorLMB:             '#ffee00',  // amarillo brillante para todas las LMB
-    colorRMB:             '#91ff00',  // verde brillante para todas las RMB
-    colorDash:            '#9900ff',  // naranja para el dash
-    colorHealthFull:      '#ff0000',
-    colorHealthMid:       '#ff0000',
-    colorHealthLow:       '#ff0000',
-    colorXPBar:           '#ff3300',
-    colorPopHumans:       '#ff5e00',  
+    colorLMB:             '#ffffff', 
+    colorRMB:             '#91ff00', 
+    colorDash:            '#ffffff',  
+    colorHealthFull:      '#fffb00',
+    colorHealthMid:       '#fffb00',
+    colorHealthLow:       '#fffb00',
+    colorXPBar:           '#fffb00',
+    colorPopHumans:       '#ff7300',  
     colorPopZombies:      '#99ff00',  
     colorPopForces:       '#00beff',  
 
     // ── HUD: textos ───────────────────────────────────────────────────────
     labelHealth:            'HEALTH',
     labelXP:                'XP',
-    labelLMB:               'LMB',
-    labelRMB:               'RMB',
+    labelLMB:               'LEFT CLICK',
+    labelRMB:               'RIGHT CLICK',
     labelDash:              'DASH',
     labelPopHumans:         'HUMANS',
     labelPopZombies:        'ZOMBIES',
     labelPopForces:         'POLICE',
     hudFontSize:            25,    // tamaño de fuente del HUD en px
     hudFontSizeLarge:       18,    // tamaño para labels de habilidades
-    colorControlled:        '#fffb00',  // hue amarillo claro para zombies controlados por LMB
-    controlledZombieScaleX: 1.1,  // escala horizontal del glow
-    controlledZombieScaleY: 1.1,  // escala vertical del glow
+    colorControlled:        '#ffffff',  // hue amarillo claro para zombies controlados por LMB
+    controlledZombieScaleX: 1.2,  // escala horizontal del glow
+    controlledZombieScaleY: 1.2,  // escala vertical del glow
 
     // ── HUD: tamaños ──────────────────────────────────────────────────────
     hudBarWidth:          300,   // ancho de las barras de salud y XP en px
-    hudCooldownRadius:    50,    // radio de los círculos de cooldown en px
+    hudCooldownRadius:    60,    // radio de los círculos de cooldown en px
 
     // ── XP / niveles ──────────────────────────────────────────────────────
     xpLevel1:             20,    // infectados para el primer nivel

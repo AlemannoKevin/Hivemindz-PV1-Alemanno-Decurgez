@@ -61,14 +61,13 @@ class Zombie extends GameObject {
                 // Creamos el glow con las mismas texturas que el sprite principal
                 this._glowSprite = new PIXI.AnimatedSprite(this.sprite.textures);
                 this._glowSprite.anchor.set(0.5);
-                this._glowSprite.tint  = 0xffff00;
+                this._glowSprite.tint  = 0xffffff;
                 this._glowSprite.alpha = 1.0;
-                // Usamos un filtro de color para hacer el amarillo 100% sólido
                 const colorMatrix = new PIXI.ColorMatrixFilter();
                 colorMatrix.matrix = [
                     0, 0, 0, 0, 1,   // R → máximo
                     0, 0, 0, 0, 1,   // G → máximo
-                    0, 0, 0, 0, 0,   // B → cero
+                    0, 0, 0, 0, 1,   // B → máximo
                     0, 0, 0, 1, 0,   // A → preservar
                 ];
                 this._glowSprite.filters = [colorMatrix];
