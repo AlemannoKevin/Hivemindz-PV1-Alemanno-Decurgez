@@ -57,6 +57,9 @@ class Game {
         this._eliteCD         = 0;
         this._eliteInst       = null;
 
+        this._matchTimer    = 0;       // tiempo transcurrido en frames
+        this._matchStarted  = false;   // empieza a contar cuando el jugador se transforma
+
         setup().then(() => this.start());
     }
 
@@ -196,6 +199,8 @@ class Game {
     _handleRMB(mx, my) {
         if (!this.player.isZombie) {
             this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+            this._matchStarted = true;
+            document.getElementById('match-timer').style.display = 'block';
             this._startTimerOn = false;
             document.getElementById('start-timer').style.display          = 'none';
             document.getElementById('population-bar-wrap').style.display  = 'flex';
@@ -256,6 +261,10 @@ class Game {
     _tick(delta) {
         if (this._paused || !this._gameMode) return;
 
+        if (this._matchStarted && !this._paused) {
+            this._matchTimer += delta;
+        }
+
         this._tickStartTimer(delta);
         this.player.update(delta);
 
@@ -310,6 +319,8 @@ class Game {
                     this._waveTimer = Config.waveDuration; // arranca recién ahora
                 }
                 if (!this.player.isZombie) this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+                this._matchStarted = true;
+                document.getElementById('match-timer').style.display = 'block';
             }
     }
 
@@ -466,6 +477,16 @@ class Game {
             if (this._upgradeCount < thresholds.length && infected >= thresholds[this._upgradeCount]) {
                 this._upgradeCount++;
                 this._mostrarUpgrade();
+            }
+        }
+
+        if (!this._waveMode && this._matchStarted) {
+            const el = document.getElementById('match-timer');
+            if (el) {
+                const seg = Math.floor(this._matchTimer / 60);
+                const min = Math.floor(seg / 60);
+                const s   = seg % 60;
+                el.textContent = `TIME: ${min}:${s.toString().padStart(2, '0')}`;
             }
         }
 
@@ -717,6 +738,45 @@ class Game {
 
     _mostrarVictoria() {
         this.app.ticker.stop();
+
+        if (!this._waveMode) {
+            const tiempoSegundos = Math.floor(this._matchTimer / 60);
+            const min    = Math.floor(tiempoSegundos / 60);
+            const seg    = tiempoSegundos % 60;
+            const tiempo = `${min}:${seg.toString().padStart(2, '0')}`;
+
+            const tiempoEl = document.getElementById('victory-time');
+            if (tiempoEl) tiempoEl.textContent = `TIME: ${tiempo}`;
+
+            // Limpiamos el localStorage si tiene formato viejo (número suelto)
+            let scores = [];
+            try {
+                const raw = localStorage.getItem(Config.scoreKey);
+                const parsed = JSON.parse(raw);
+                scores = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                scores = [];
+                localStorage.removeItem(Config.scoreKey);
+            }
+
+            const esTop10 = scores.length < 10 || tiempoSegundos < scores[scores.length - 1]?.time;
+
+            const recordEl = document.getElementById('victory-record');
+            const formEl   = document.getElementById('victory-name-form');
+            const inputEl  = document.getElementById('victory-name-input');
+
+            if (esTop10) {
+                if (recordEl) recordEl.textContent    = '★ TOP 10!';
+                if (formEl)   formEl.style.display    = 'flex';
+                if (formEl)   formEl.dataset.time     = tiempoSegundos;
+                if (inputEl)  inputEl.value           = '';
+                if (inputEl)  setTimeout(() => inputEl.focus(), 100);
+            } else {
+                if (recordEl) recordEl.textContent = '';
+                if (formEl)   formEl.style.display = 'none';
+            }
+        }
+
         document.getElementById('victory-screen').style.display = 'flex';
     }
 

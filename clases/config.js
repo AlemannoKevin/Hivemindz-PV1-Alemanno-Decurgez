@@ -1,5 +1,7 @@
 const Config = {
 
+    scoreKey: 'hivemindz_highscore',
+
     // ── Mundo ─────────────────────────────────────────────────────────────
     worldWidth:  2700,
     worldHeight: 2025,
@@ -46,8 +48,8 @@ const Config = {
     playerSpeed:          2.9,
     aoeRadius:            175,
     aoeFadeFrames:        30,
-    playerDashSpeed:      18,
-    playerDashDuration:   25,
+    playerDashSpeed:      16,
+    playerDashDuration:   20,
     playerDashCooldown:   150,
     playerBulletSpeed:    4.5,
     playerBulletCooldown: 100,
@@ -59,7 +61,7 @@ const Config = {
     zombieAttackCooldown: 175,
 
     // ── Policía ───────────────────────────────────────────────────────────
-    policiaCount:        50,
+    policiaCount:        40,
     policiaHits:         3,
     policiaSpeed:        1.6,
     policiaDetectRange:  200,
@@ -96,10 +98,10 @@ const Config = {
     bioCentralSpeedBoost: 1.8,
 
     // ── Habilidad: Putrified Daggers ──────────────────────────────────────
-    daggerCooldown:      75,
-    daggerHitsToInfect:  3,
+    daggerCooldown:      60,
+    daggerHitsToInfect:  2,
     daggerPoliceDamage:  0.375,
-    daggerSpreadAngle:   0.125,
+    daggerSpreadAngle:   0.135,
 
     // ── Habilidad: Kick-Start Combustion ──────────────────────────────────
     combustionRadius:    100,
@@ -120,9 +122,9 @@ const Config = {
     // ── Habilidad: Come Together ──────────────────────────────────────────
     comeTogetherRadius:             60,
     comeTogetherDuration:           225,
-    comeTogetherForce:              115,
+    comeTogetherForce:              90,
     comeTogetherZombies:            40,
-    comeTogetherSpeed:              2.4,
+    comeTogetherSpeed:              4,
     comeTogetherBoostDuration:      200,
     comeTogetherSpeedBoost:         2.25,
     comeTogetherDmgReduction:       0.5,
@@ -130,11 +132,11 @@ const Config = {
 
     // ── Habilidad: Necrotic Pulses ────────────────────────────────────────
     necroticPulseInterval:    50,
-    necroticPulseRadius:      200,
+    necroticPulseRadius:      210,
     necroticPulseInfectRate:  0.5,
     necroticPulseEnemyDamage: 0.2,
     necroticPulseSlowFactor:  0.5,
-    necroticPlayerSlow:       0.25,
+    necroticPlayerSlow:       0.5,
     necroticPushResist:       0.25,  // multiplicador de push recibido (75% menos)
     necroticDmgMitig:         0.25,  // multiplicador de daño recibido (75% menos)
     necroticSlowToggle:       0.4,  // multiplicador de velocidad cuando está ON
@@ -143,15 +145,15 @@ const Config = {
     // ── Habilidad: Hivemind ──────────────────────────────────────────────────────────
     hivemindRingInner:         125,   // distancia mínima del anillo al jugador
     hivemindRingWidth:         75,   // grosor del anillo
-    hivemindGatherDuration:    150,
+    hivemindGatherDuration:    175,
     hivemindActiveDuration:    500,
     hivemindCooldown:          600,
-    hivemindGatherSpeed:       4.0,
-    hivemindActiveSpeed:       4.0,
+    hivemindGatherSpeed:       5.0,
+    hivemindActiveSpeed:       5.0,
     hivemindSpawnCount:        25,
     hivemindZombieCount:       50,    // máximo total de zombies en el anillo
-    hivemindContactInfectRate: 0.3,  // % de infección por segundo en contacto
-    hivemindContactDamageRate: 0.3,  // % de vida por segundo en contacto
+    hivemindContactInfectRate: 0.35,  // % de infección por segundo en contacto
+    hivemindContactDamageRate: 0.35,  // % de vida por segundo en contacto
 
     // ── Habilidad: Elite Reinforcements ──────────────────────────────────────────────
     eliteCount:               4,     // zombies spawneados
@@ -159,10 +161,10 @@ const Config = {
     eliteCooldown:            450,   // frames de cooldown
 
     // ── Spawns post-upgrade ───────────────────────────────────────────────
-    upgradeZombieSpawn:       10,    // zombies que spawnan tras elegir habilidad
-    upgradeEnemyTarget:       50,    // enemigos objetivo tras upgrade (normal)
-    upgradeEnemyTargetFinal:  75,    // enemigos objetivo en el último upgrade
-    upgradeZombieCap:         200,   // cap de zombies en waves mode
+    upgradeZombieSpawn:       15,    // zombies que spawnan tras elegir habilidad
+    upgradeEnemyTarget:       40,    // enemigos objetivo tras upgrade (normal)
+    upgradeEnemyTargetFinal:  50,    // enemigos objetivo en el último upgrade
+    upgradeZombieCap:         150,   // cap de zombies en waves mode
 
     // ── HUD upgrade screen ────────────────────────────────────────────────
     

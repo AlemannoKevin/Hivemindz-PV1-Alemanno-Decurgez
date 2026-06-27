@@ -126,14 +126,30 @@
         </div>
         <div style="
             position:fixed; bottom:24px; right:28px;
-            font-family:monospace; font-size:20px;
+            font-family:monospace; font-size:19px;
             color:rgba(255,255,255,0.6);
             letter-spacing:1px; line-height:2;
         ">
-            <div><span style="display:inline-block;width:90px;color:#ff8900;font-weight:bold;">WASD:</span>Movement</div>
-            <div><span style="display:inline-block;width:90px;color:#ffee00;font-weight:bold;">LMB:</span>Horde control abilities</div>
-            <div><span style="display:inline-block;width:90px;color:#91ff00;font-weight:bold;">RMB:</span>Infection abilities</div>
-            <div><span style="display:inline-block;width:90px;color:#9900ff;font-weight:bold;">SPACE:</span>Dash</div>
+            <div><span style="display:inline-block;width:160px;color:#ffffff;font-weight:bold;">WASD:</span>Movement</div>
+            <div><span style="display:inline-block;width:160px;color:#ffffff;font-weight:bold;">LMB:</span>Horde control abilities</div>
+            <div><span style="display:inline-block;width:160px;color:#ffffff;font-weight:bold;">RMB:</span>Infection abilities</div>
+            <div><span style="display:inline-block;width:160px;color:#ffffff;font-weight:bold;">SPACE:</span>Dash</div>
+            <div><span style="display:inline-block;width:160px;color:#ffffff;font-weight:bold;">MOUSE-WHEEL:</span>Zoom</div>
+        </div>
+        <!-- Leaderboard izquierda -->
+        <div id="leaderboard" style="
+            position:fixed; left:40px; top:50%; transform:translateY(-50%);
+            font-family:monospace; font-size:14px;
+            color:rgba(255,255,255,0.8); letter-spacing:1px;
+            display:flex; flex-direction:column; gap:6px;
+            background:rgba(0,0,0,0.7);
+            border:1px solid rgba(255,255,255,0.15);
+            border-radius:10px;
+            padding:16px 20px;
+            min-width:220px;
+        ">
+            <div style="font-size:16px;font-weight:bold;color:#ff8900;letter-spacing:3px;margin-bottom:8px;text-align:center;">TOP 10</div>
+            <div id="leaderboard-list"></div>
         </div>
     </div>
 
@@ -255,6 +271,20 @@
         border-radius:10px;
         padding:6px 20px;
     ">WAVE 1/9</div>
+
+    <div id="match-timer" style="
+        display:none; position:fixed; top:85px; left:50%; transform:translateX(-50%);
+        font-family:monospace; font-weight:bold;
+        color:#ffffff; letter-spacing:3px;
+        -webkit-text-stroke:0.5px #000;
+        text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000;
+        z-index:10; pointer-events:none;
+        white-space:nowrap;
+        background:rgba(0,0,0,0.7);
+        border:1px solid rgba(255,255,255,0.15);
+        border-radius:10px;
+        padding:6px 20px;
+    ">TIME: 0:00</div>
     
     <!-- ── Pantallas de estado ──────────────────────────────────────────── -->
     <div id="death-screen" style="
@@ -276,7 +306,31 @@
     ">
         <div>YOU WIN</div>
         <div style="font-size:32px;color:#ff8900;letter-spacing:2px;">The city is yours</div>
-        <button onclick="volverAlMenu()" style="margin-top:16px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
+        <div id="victory-time" style="font-size:24px;color:#fff;letter-spacing:3px;margin-top:8px;"></div>
+        <div id="victory-record" style="font-size:22px;color:#ffee00;letter-spacing:3px;"></div>
+
+        <!-- Formulario de nombre (solo aparece si es top 10) -->
+        <div id="victory-name-form" style="
+            display:none; flex-direction:column; align-items:center; gap:12px;
+            margin-top:8px;
+        ">
+            <div style="font-size:16px;color:#aaa;letter-spacing:2px;">ENTER YOUR NAME</div>
+            <input id="victory-name-input" type="text" maxlength="10" style="
+                font-family:monospace; font-size:22px; font-weight:bold;
+                letter-spacing:4px; text-align:center; text-transform:uppercase;
+                background:rgba(0,0,0,0.6); color:#fff;
+                border:2px solid #ff8900; border-radius:8px;
+                padding:8px 16px; width:220px; outline:none;
+            " placeholder="YOUR NAME"/>
+            <button onclick="guardarScore()" style="
+                font-family:monospace; font-size:16px; letter-spacing:2px;
+                padding:8px 24px; background:transparent; color:#ff8900;
+                border:2px solid #ff8900; border-radius:8px; cursor:pointer;
+            " onmouseover="this.style.background='rgba(255,137,0,0.15)'"
+               onmouseout="this.style.background='transparent'">CONFIRM</button>
+        </div>
+
+        <button onclick="volverAlMenu()" style="margin-top:8px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
 
     <div id="upgrade-screen" style="
@@ -291,21 +345,43 @@
 
     <!-- ── Scripts ─────────────────────────────────────────────────────── -->
     <script>
+
         function startGame(mode) {
             document.getElementById('menu-screen').style.display = 'none';
             document.getElementById('start-timer').style.display = 'block';
             Game.instance._gameMode = mode;
             if (mode === 'waves') {
+                document.getElementById('wave-counter').style.display  = 'none';
                 Game.instance._waveMode         = true;
                 Game.instance._waveNumber       = 1;
-                // El timer de wave NO arranca todavía — se setea cuando termina la transformación
                 Game.instance._waveTimer        = null;
                 Game.instance._waveUpgradeTimer = Config.waveUpgradeEvery;
                 Game.instance._mostrarUpgrade();
+            } else {
+                document.getElementById('match-timer').style.display = 'block';
             }
         }
 
         function volverAlMenu() { location.reload(); }
+
+        function cargarHighscore() {
+            const val = localStorage.getItem(Config.scoreKey);
+            const el  = document.getElementById('highscore-display');
+            if (!el) return;
+            if (!val) {
+                el.textContent = 'BEST: --:--';
+            } else {
+                const seg  = parseInt(val);
+                const min  = Math.floor(seg / 60);
+                const s    = seg % 60;
+                el.textContent = `BEST: ${min}:${s.toString().padStart(2, '0')}`;
+            }
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(initCirculos, 100);
+            cargarHighscore();
+        });
 
         function initCirculos() {
             const r      = Config.hudCooldownRadius;
@@ -346,6 +422,77 @@
             const wc = document.getElementById('wave-counter');
             if (wc) wc.style.fontSize = Config.waveCounterFontSize + 'px';
         }
+
+        function guardarScore() {
+            const form   = document.getElementById('victory-name-form');
+            const input  = document.getElementById('victory-name-input');
+            const nombre = (input.value.trim().toUpperCase() || 'UNKNOWN').slice(0, 10);
+            const tiempo = parseInt(form.dataset.time);
+
+            let scores = [];
+            try {
+                const raw    = localStorage.getItem(Config.scoreKey);
+                const parsed = JSON.parse(raw);
+                scores       = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                scores = [];
+            }
+
+            scores.push({ name: nombre, time: tiempo });
+            scores.sort((a, b) => a.time - b.time);
+            scores.splice(10);
+            localStorage.setItem(Config.scoreKey, JSON.stringify(scores));
+
+            form.style.display = 'none';
+        }
+
+        // Confirmar con Enter
+        window.addEventListener('load', () => {
+            setTimeout(initCirculos, 100);
+            cargarHighscore();
+
+            const input = document.getElementById('victory-name-input');
+            if (input) {
+                input.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') guardarScore();
+                });
+            }
+        });
+
+        function cargarHighscore() {
+            let scores = [];
+            try {
+                const raw    = localStorage.getItem(Config.scoreKey);
+                const parsed = JSON.parse(raw);
+                scores       = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                scores = [];
+            }
+            const lista  = document.getElementById('leaderboard-list');
+            if (!lista) return;
+
+            if (scores.length === 0) {
+                lista.innerHTML = '<div style="color:rgba(255,255,255,0.3);text-align:center;">NO RECORDS YET</div>';
+                return;
+            }
+
+            lista.innerHTML = scores.map((s, i) => {
+                const min   = Math.floor(s.time / 60);
+                const seg   = s.time % 60;
+                const tiempo = `${min}:${seg.toString().padStart(2, '0')}`;
+                const color  = i === 0 ? '#ffee00' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : 'rgba(255,255,255,0.6)';
+                const medal  = i === 0 ? '★ ' : i === 1 ? '✦ ' : i === 2 ? '✧ ' : `${i + 1}. `;
+                return `<div style="display:flex;justify-content:space-between;gap:20px;color:${color};">
+                    <span>${medal}${s.name}</span>
+                    <span>${tiempo}</span>
+                </div>`;
+            }).join('');
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(initCirculos, 100);
+            cargarHighscore();
+        });
 
         window.addEventListener('load', () => setTimeout(initCirculos, 100));
     </script>
