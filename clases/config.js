@@ -169,8 +169,8 @@ const Config = {
     // ── HUD upgrade screen ────────────────────────────────────────────────
     
     upgradeCardWidth:         320,
-    upgradeCardFontTitle:     22,
-    upgradeCardFontDesc:      15,
+    upgradeCardFontTitle:     28,
+    upgradeCardFontDesc:      20,
     upgradeCardFontType:      14,
     upgradeScreenTitleSize:   40,
 

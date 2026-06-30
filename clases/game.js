@@ -718,17 +718,17 @@ class Game {
                 cursor:pointer;
                 text-align:center;
             `;
-            div.onmouseover = () => div.style.background = `rgba(${alpha.replace('0.07', '0.18')})`;
+            div.onmouseover = () => div.style.background = `rgba(${alpha.split(',').slice(0,3).join(',')},0.25)`;
             div.onmouseout  = () => div.style.background = `rgba(${alpha})`;
             div.onclick     = () => this.pickUpgrade(hab.id);
             div.innerHTML   = `
                 <div style="font-size:${Config.upgradeCardFontType}px;color:${color};letter-spacing:2px;margin-bottom:10px;">${hab.tipo.toUpperCase()}</div>
-                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;letter-spacing:1px;margin-bottom:12px;">${hab.nombre}</div>
-                <div style="font-size:${Config.upgradeCardFontDesc}px;color:#bbb;line-height:1.6;">${hab.desc}</div>`;
+                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:${color};letter-spacing:1px;margin-bottom:12px;-webkit-text-stroke:1px #000;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0px 2px 0 #000,0px -2px 0 #000,2px 0px 0 #000,-2px 0px 0 #000;">${hab.nombre}</div>
+                <div style="font-size:${Config.upgradeCardFontDesc}px;color:#fff;line-height:1.6;">${hab.desc}</div>`;
             return div;
         };
 
-        if (lmb) cards.appendChild(crearCard(lmb, '#ffee00', '255,238,0,0.07'));
+        if (lmb) cards.appendChild(crearCard(lmb, '#ffffff', '200,200,200,0.07'));
         if (rmb) cards.appendChild(crearCard(rmb, '#91ff00', '145,255,0,0.07'));
 
         this._paused = true;
