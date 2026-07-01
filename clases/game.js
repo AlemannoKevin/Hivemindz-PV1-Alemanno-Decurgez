@@ -723,7 +723,7 @@ class Game {
             div.onclick     = () => this.pickUpgrade(hab.id);
             div.innerHTML   = `
                 <div style="font-size:${Config.upgradeCardFontType}px;color:${color};letter-spacing:2px;margin-bottom:10px;">${hab.tipo.toUpperCase()}</div>
-                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:${color};letter-spacing:1px;margin-bottom:12px;-webkit-text-stroke:1px #000;text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0px 2px 0 #000,0px -2px 0 #000,2px 0px 0 #000,-2px 0px 0 #000;">${hab.nombre}</div>
+                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:#ffffff;letter-spacing:1px;margin-bottom:12px;">${hab.nombre}</div>
                 <div style="font-size:${Config.upgradeCardFontDesc}px;color:#fff;line-height:1.6;">${hab.desc}</div>`;
             return div;
         };
