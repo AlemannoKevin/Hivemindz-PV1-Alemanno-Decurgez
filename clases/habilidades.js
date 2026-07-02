@@ -73,6 +73,7 @@ class CharcoPit {
         this.graphic = new PIXI.Graphics();
         this._dibujar(1);
         worldContainer.addChild(this.graphic);
+        SoundManager.play('venomousPit');
     }
 
     _dibujar(alpha) {
@@ -197,6 +198,7 @@ class ZombieProyectil {
     _explotar(allHumans, allPolicia, zombies, worldContainer) {
         this._muerto       = true;
         this._zombie._dead = true;
+        SoundManager.play('explosion');
         worldContainer.removeChild(this.container);
 
         _aplicarAUnidades(allHumans, allPolicia, this.x, this.y, Config.combustionRadius,
@@ -353,7 +355,8 @@ class ComeTogether {
         this._muerto = true;
         this._player._comeTogether = false;
         if (this._player.sprite) this._player.sprite.tint = 0xffffff;
-
+        
+        SoundManager.play('buffedZombies');
         for (const z of this._zombies) {
             z._comeTogether = false;
             z._actualizarContorno?.(false);
@@ -594,6 +597,7 @@ class EliteReinforcement {
         this._wc    = worldContainer;
         this._elites = [];
 
+        SoundManager.play('buffedZombies');
         for (let i = 0; i < Config.eliteCount; i++) {
             const angle  = (i / Config.eliteCount) * Math.PI * 2;
             const spawnX = player.x + Math.cos(angle) * 60;

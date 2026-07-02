@@ -60,11 +60,38 @@ class Game {
         this._matchTimer    = 0;       // tiempo transcurrido en frames
         this._matchStarted  = false;   // empieza a contar cuando el jugador se transforma
 
+        // Bonificaciones permanentes activas
+        this._bonusSpeed    = false;
+        this._bonusCooldown = false;
+        this._bonusShield   = false;
+
         setup().then(() => this.start());
     }
 
     // ── Inicio ────────────────────────────────────────────────────────────
     async start() {
+        await SoundManager.init();
+        await SoundManager.loadAll({
+            menuMusic:      'sounds/menuMusic.mp3',
+            matchMusic:     'sounds/matchMusic.mp3',
+            victory:        'sounds/victory.mp3',
+            defeat:         'sounds/defeat.mp3',
+            playerShot:     'sounds/playerShot.wav',
+            playerDash:     'sounds/playerDash.mp3',
+            playerChannel:  'sounds/playerChannel.wav',
+            transformation: 'sounds/transformation.wav',
+            hordeControl:   'sounds/hordeControl.mp3',
+            buffedZombies:  'sounds/buffedZombies.mp3',
+            playerHit:      'sounds/playerHit.wav',
+            zombieBite:     'sounds/zombieBite.wav',
+            explosion:      'sounds/explosion.mp3',
+            venomousPit:    'sounds/venomousPit.mp3',
+            policeShot:     'sounds/policeShot.wav',
+            swatShot:       'sounds/swatShot.wav',
+            brawlerStrike:  'sounds/brawlerStrike.wav',
+            humanFlee:      'sounds/humanFlee.wav',
+        });
+        SoundManager.playMusic('menuMusic', 3000);
         this.app = new PIXI.Application({
             width:           window.innerWidth,
             height:          window.innerHeight,
@@ -188,10 +215,12 @@ class Game {
         } else if (this._lmbUpgrade === 'cometogether') {
             if (!this._comeTogether && this._comeTogetherCD <= 0) {
                 this._comeTogether = new ComeTogether(this.player, this.zombies, this.worldContainer);
+                SoundManager.play('playerChannel');
             }
         } else if (this._lmbUpgrade === 'hivemind') {
             if (!this._hivemind && this._hivemindCD <= 0) {
                 this._hivemind = new Hivemind(this.player, this.zombies, this.worldContainer);
+                SoundManager.play('playerChannel');
             }
         }
     }
@@ -199,6 +228,9 @@ class Game {
     _handleRMB(mx, my) {
         if (!this.player.isZombie) {
             this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+            SoundManager.play('transformation');
+            SoundManager.stopMusic();
+            setTimeout(() => SoundManager.playMusic('matchMusic', 3000), 1500);
             this._matchStarted = true;
             document.getElementById('match-timer').style.display = 'block';
             this._startTimerOn = false;
@@ -226,6 +258,7 @@ class Game {
         if (this.player._bulletCooldown > 0 || this.player._comeTogether) return;
 
         this.player.attack();
+        SoundManager.play('playerShot');
         const angle = Utils.angleTo(this.player.x, this.player.y, mx, my);
 
         if (this._rmbUpgrade === 'dagger') {
@@ -270,6 +303,8 @@ class Game {
 
         if (this.player.dead) {
             this.app.ticker.stop();
+            SoundManager.stopMusic();
+            SoundManager.play('defeat');
             document.getElementById('death-screen').style.display = 'flex';
             return;
         }
@@ -319,6 +354,9 @@ class Game {
                     this._waveTimer = Config.waveDuration; // arranca recién ahora
                 }
                 if (!this.player.isZombie) this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
+                SoundManager.play('transformation');
+                SoundManager.stopMusic();
+                setTimeout(() => SoundManager.playMusic('matchMusic', 3000), 1500);
                 this._matchStarted = true;
                 document.getElementById('match-timer').style.display = 'block';
             }
@@ -343,6 +381,7 @@ class Game {
                 }
             } else if (Mouse.leftHeld && this._lmbOverheat > 0) {
                 lmbActive = true;
+                SoundManager.playLoop('hordeControl', '_hordeSource');
                 this._lmbOverheat -= delta;
                 if (this._lmbOverheat <= 0) {
                     this._lmbOverheat      = 0;
@@ -351,6 +390,7 @@ class Game {
                     lmbActive = false;
                 }
             } else if (!Mouse.leftHeld) {
+                SoundManager.stopLoop('_hordeSource');
                 this._lmbOverheat = Math.min(Config.lmbOverheatMax, this._lmbOverheat + delta * Config.lmbRechargeRate);
             }
         }
@@ -498,6 +538,7 @@ class Game {
     }
 
     _actualizarCirculos() {
+        const cdMult = this._bonusCooldown ? Config.bonusCooldownMult : 1;
         const r      = Config.hudCooldownRadius * 0.83;
         const circum = 2 * Math.PI * r;
 
@@ -516,14 +557,14 @@ class Game {
                     pctLMB = this._lmbOverheat / Config.lmbOverheatMax;
                 }
             } else if (this._lmbUpgrade === 'biomass') {
-                pctLMB = this._bioCD > 0 ? 1 - (this._bioCD / Config.bioCooldown) : 1;
+                pctLMB = this._bioCD > 0 ? 1 - (this._bioCD / (Config.bioCooldown * cdMult)) : 1;
             } else if (this._lmbUpgrade === 'combustion') {
-                pctLMB = this._combustionCD > 0 ? 1 - (this._combustionCD / Config.combustionCooldown) : 1;
+                pctLMB = this._combustionCD > 0 ? 1 - (this._combustionCD / (Config.combustionCooldown * cdMult)) : 1;
             } else if (this._lmbUpgrade === 'cometogether') {
-                const cdMax = Config.comeTogetherDuration * 2;
+                const cdMax = Config.comeTogetherDuration * 2 * cdMult;
                 pctLMB = this._comeTogetherCD > 0 ? 1 - (this._comeTogetherCD / cdMax) : 1;
             } else if (this._lmbUpgrade === 'hivemind') {
-                pctLMB = this._hivemindCD > 0 ? 1 - (this._hivemindCD / Config.hivemindCooldown) : 1;
+                pctLMB = this._hivemindCD > 0 ? 1 - (this._hivemindCD / (Config.hivemindCooldown * cdMult)) : 1;
             }
             arcLMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctLMB))));
 
@@ -540,16 +581,15 @@ class Game {
         if (arcRMB) {
             arcRMB.style.stroke = Config.colorRMB;
             let pctRMB = 1;
-            // NUEVO
-            if (this._rmbUpgrade === 'necrotic') {
+             if (this._rmbUpgrade === 'necrotic') {
                 pctRMB = 1;
-                // Cambiamos el color según el estado ON/OFF
-                arcRMB.style.stroke = this._necroticOn ? Config.colorRMB : 'rgba(255,255,255,0.25)';
             } else if (this.player._bulletCooldown > 0) {
-                const shotMax = this._rmbUpgrade === 'dagger' ? Config.daggerCooldown : Config.playerBulletCooldown;
+                const shotMax = this._rmbUpgrade === 'dagger'
+                    ? Config.daggerCooldown * cdMult
+                    : Config.playerBulletCooldown * cdMult;
                 pctRMB = 1 - (this.player._bulletCooldown / shotMax);
             } else if (this._rmbUpgrade === 'elite') {
-                pctRMB = this._eliteCD > 0 ? 1 - (this._eliteCD / Config.eliteCooldown) : 1;
+                pctRMB = this._eliteCD > 0 ? 1 - (this._eliteCD / (Config.eliteCooldown * cdMult)) : 1;
             }
             arcRMB.style.strokeDashoffset = (circum * (1 - Math.max(0, Math.min(1, pctRMB)))).toFixed(2);
             if (lblRMB) lblRMB.textContent = this._rmbUpgrade
@@ -619,9 +659,16 @@ class Game {
     }
 
     // ── Upgrades ──────────────────────────────────────────────────────────
+    
     pickUpgrade(id) {
         document.getElementById('upgrade-screen').style.display = 'none';
         this._paused = false;
+
+        // En waves, la música arranca al confirmar la primera habilidad
+        if (this._waveMode && this._upgradeCount === 0 && !this._music) {
+            SoundManager.stopMusic();
+            setTimeout(() => SoundManager.playMusic('matchMusic', 1500), 500);
+        }
 
         const hab = HABILIDADES.find(h => h.id === id);
         if (!hab) return;
@@ -661,6 +708,21 @@ class Game {
     }
 
     _mostrarUpgrade() {
+        const BONIFICACIONES = [
+            { id: 'speed',    nombre: 'Adrenaline Rush',      desc: '+50% de velocidad de movimiento permanente.' },
+            { id: 'heal',     nombre: 'Second Wind',          desc: 'Restaura la vida del jugador al máximo.' },
+            { id: 'cooldown', nombre: 'Genetic Enhancement',  desc: 'Reduce el cooldown de todas las habilidades un 25% permanentemente.' },
+            { id: 'elite',    nombre: 'Elite Vanguard',       desc: 'Spawna 5 zombies élite alrededor del jugador.' },
+            { id: 'shield',   nombre: 'Rotting Armor',        desc: 'Reduce el daño recibido un 50% permanentemente.' },
+        ];
+        const bonDisp = BONIFICACIONES.filter(b => {
+            if (b.id === 'heal'     && this.player.health >= Config.playerMaxHealth) return false;
+            if (b.id === 'speed'    && this._bonusSpeed)    return false;
+            if (b.id === 'cooldown' && this._bonusCooldown) return false;
+            if (b.id === 'shield'   && this._bonusShield)   return false;
+            return true;
+        });
+        const bonElegido = bonDisp[Math.floor(Math.random() * bonDisp.length)] || null;
         const { lmb, rmb } = elegirHabilidades(this._habilidadesUsadas);
         if (!lmb && !rmb) return;
         if (lmb) this._habilidadesUsadas.push(lmb.id);
@@ -705,6 +767,7 @@ class Game {
         }
 
         const cards = document.getElementById('upgrade-cards');
+        cards.style.alignItems = 'center';
         cards.innerHTML = '';
 
         const crearCard = (hab, color, alpha) => {
@@ -731,13 +794,73 @@ class Game {
         if (lmb) cards.appendChild(crearCard(lmb, '#ffffff', '200,200,200,0.07'));
         if (rmb) cards.appendChild(crearCard(rmb, '#91ff00', '145,255,0,0.07'));
 
+        // Botón de bonificación centrado y más pequeño
+        if (bonElegido) {
+            const bonDiv = document.createElement('div');
+            bonDiv.style.cssText = `
+                width:${Math.floor(Config.upgradeCardWidth * 1)}px;
+                padding:16px 18px;
+                border:2px solid #aaaaff;
+                border-radius:12px;
+                background:rgba(100,100,255,0.07);
+                cursor:pointer;
+                text-align:center;
+                align-self:center;
+            `;
+            bonDiv.onmouseover = () => bonDiv.style.background = 'rgba(100,100,255,0.2)';
+            bonDiv.onmouseout  = () => bonDiv.style.background = 'rgba(100,100,255,0.07)';
+            bonDiv.onclick     = () => this._aplicarBonificacion(bonElegido.id);
+            bonDiv.innerHTML   = `
+                <div style="font-size:${Config.upgradeCardFontType}px;color:#aaaaff;letter-spacing:2px;margin-bottom:8px;">BONUS</div>
+                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:#aaaaff;letter-spacing:1px;margin-bottom:10px;">${bonElegido.nombre}</div>
+                <div style="font-size:${Config.upgradeCardFontDesc}px;color:#bbb;line-height:1.5;">${bonElegido.desc}</div>
+            `;
+            cards.appendChild(bonDiv);
+        }
+
         this._paused = true;
         const screen = document.getElementById('upgrade-screen');
         screen.style.display = 'flex';
     }
 
+    _aplicarBonificacion(id) {
+        document.getElementById('upgrade-screen').style.display = 'none';
+        this._paused = false;
+
+        switch (id) {
+            case 'speed':
+                this._bonusSpeed = true;
+                break;
+            case 'heal':
+                this.player.health = Config.playerMaxHealth;
+                this.player._actualizarBarraSalud();
+                break;
+            case 'cooldown':
+                this._bonusCooldown = true;
+                break;
+            case 'elite': {
+                for (let i = 0; i < Config.bonusEliteCount; i++) {
+                    const angle  = (i / Config.bonusEliteCount) * Math.PI * 2;
+                    const spawnX = this.player.x + Math.cos(angle) * 80;
+                    const spawnY = this.player.y + Math.sin(angle) * 80;
+                    const z      = new Zombie(spawnX, spawnY, this.worldContainer);
+                    z._ctBoostTimer      = 9999999; // no expiran
+                    z._ctReducedAttackCD = true;
+                    if (z.sprite) z.sprite.tint = 0xff4444;
+                    this.zombies.push(z);
+                }
+                break;
+            }
+            case 'shield':
+                this._bonusShield = true;
+                break;
+        }
+    }
+
     _mostrarVictoria() {
         this.app.ticker.stop();
+        SoundManager.stopMusic();
+        SoundManager.play('victory');
 
         if (!this._waveMode) {
             const tiempoSegundos = Math.floor(this._matchTimer / 60);

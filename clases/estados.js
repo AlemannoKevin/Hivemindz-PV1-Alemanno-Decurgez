@@ -89,6 +89,7 @@ class HumanoFleeState {
         humano._fleeTimer    = Config.humanFleeFrames;
         humano._fleeCooldown = Config.humanFleeCooldown || 120;
         humano.exclamation.visible = true;
+        SoundManager.playCooled('humanFlee', 300);
     }
 
     update(humano, context) {
@@ -309,6 +310,7 @@ class PeleadorAttackState {
 
     _swingBat(peleador) {
         const allZombies = peleador._lastZombies || [];
+        SoundManager.play('brawlerStrike');
         for (const zombie of allZombies) {
             const dist = Utils.distance(peleador.x, peleador.y, zombie.x, zombie.y);
             if (dist < Config.brawlerBatRange && dist > 0) {

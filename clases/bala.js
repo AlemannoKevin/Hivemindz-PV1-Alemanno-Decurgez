@@ -35,6 +35,7 @@ class Bala extends BalaBase {
         this.graphic.lineStyle(1.5, 0x91ff00, 0.6);
         this.graphic.drawCircle(0, 0, 9);
         worldContainer.addChild(this.graphic);
+        SoundManager.playCooled('policeShot', 80);
     }
 
     update(allHumans, worldContainer, zombies) {

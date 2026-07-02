@@ -96,9 +96,11 @@ class Player {
 
     takeDamage() {
         if (!this.isZombie || this._comeTogether || this._hivemindActive) return;
-        const mitig = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+        const mitigNecrotic = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
             ? Config.necroticDmgMitig : 1;
-        this.health -= mitig;
+        const mitigShield = Game.instance?._bonusShield ? Config.bonusDamageShield : 1;
+        this.health -= mitigNecrotic * mitigShield;
+        SoundManager.play('playerHit');
         if (this.sprite) {
             this.sprite.tint = 0xff0000;
             setTimeout(() => { if (this.sprite) this.sprite.tint = 0xffffff; }, 150);
@@ -113,12 +115,24 @@ class Player {
         if (bar) {
             bar.style.width      = pct + '%';
             bar.style.background = pct > 50 ? Config.colorHealthFull : pct > 25 ? Config.colorHealthMid : Config.colorHealthLow;
+            const vignette = document.getElementById('low-health-vignette');
+            if (vignette) {
+                const pct = Math.max(0, this.health / Config.playerMaxHealth);
+                if (pct < 0.3) {
+                    vignette.style.display = 'block';
+                    // Cuanto menos vida, más intenso el amarillo
+                    const intensity = (0.3 - pct) / 0.3;
+                    vignette.style.boxShadow = `inset 0 0 120px 60px rgba(255,200,0,${intensity * 0.6})`;
+                } else {
+                    vignette.style.display = 'none';
+                }
+            }
         }
     }
 
     // ── Dash ──────────────────────────────────────────────────────────────
     dash() {
-        if (this._dashCooldown > 0 || this._dashDuration > 0) return;
+        if (this._dashCooldown > 0 || this._dashDuration > 0) return false;
 
         let dx = 0, dy = 0;
         if (Input.isHeld('w')) dy -= 1;
@@ -132,11 +146,15 @@ class Player {
         this._dashVy       = dir.y * Config.playerDashSpeed;
         this._dashDuration = Config.playerDashDuration;
         this._dashCooldown = Config.playerDashCooldown * this._necroCD();
+        SoundManager.play('playerDash');
+        return true;
     }
 
     _necroCD() {
-        return (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+        const necrotic = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
             ? Config.necroticDashRedux : 1;
+        const bonus = Game.instance?._bonusCooldown ? Config.bonusCooldownMult : 1;
+        return necrotic * bonus;
     }
 
     _spawnDashTrail() {
@@ -189,8 +207,9 @@ class Player {
                 this.x += moveX * Config.hivemindActiveSpeed * deltaTime;
                 this.y += moveY * Config.hivemindActiveSpeed * deltaTime;
             } else {
-                this.x += moveX * Config.playerSpeed * deltaTime * slow;
-                this.y += moveY * Config.playerSpeed * deltaTime * slow;
+                const speedBonus = Game.instance?._bonusSpeed ? Config.bonusSpeedMult : 1;
+                this.x += moveX * Config.playerSpeed * deltaTime * slow * speedBonus;
+                this.y += moveY * Config.playerSpeed * deltaTime * slow * speedBonus;
             }
         }
 

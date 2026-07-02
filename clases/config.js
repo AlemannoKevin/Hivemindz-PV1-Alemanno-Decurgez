@@ -160,6 +160,12 @@ const Config = {
     eliteDuration:            500,   // frames de vida
     eliteCooldown:            450,   // frames de cooldown
 
+    // ── Bonificaciones permanentes ────────────────────────────────────────
+    bonusSpeedMult:        1.5,    // +50% velocidad
+    bonusCooldownMult:     0.75,   // 25% reducción de cooldown
+    bonusDamageShield:     0.5,    // 50% reducción de daño
+    bonusEliteCount:       5,      // zombies elite que spawnea el bonus
+
     // ── Spawns post-upgrade ───────────────────────────────────────────────
     upgradeZombieSpawn:       15,    // zombies que spawnan tras elegir habilidad
     upgradeEnemyTarget:       40,    // enemigos objetivo tras upgrade (normal)
