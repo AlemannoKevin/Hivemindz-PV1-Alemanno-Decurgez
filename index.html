@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="icon" href="data:,">
+    <link rel="icon" href="favicon.png" type="image/png">
     <meta charset="UTF-8">
     <title>Hivemindz</title>
     <style>
@@ -108,14 +108,14 @@
         align-items:center; justify-content:center;
         flex-direction:column; gap:32px; z-index:300;
     ">
-        <div style="font-size:36px;font-weight:bold;letter-spacing:6px;color:#ff8900;">HIVEMINDZ</div>
+        <div style="font-size:36px;font-weight:bold;letter-spacing:6px;color:#fffb00;">HIVEMINDZ</div>
         <div style="display:flex;flex-direction:column;gap:16px;align-items:center;">
             <button onclick="startGame('normal')" style="
                 font-family:monospace;font-size:16px;font-weight:bold;
                 letter-spacing:3px;padding:14px 40px;
-                background:transparent;color:#ffee00;
-                border:2px solid #ffee00;border-radius:8px;cursor:pointer;
-            " onmouseover="this.style.background='rgba(255,238,0, 0.15)'"
+                background:transparent;color:#91ff00;
+                border:2px solid #91ff00;border-radius:8px;cursor:pointer;
+            " onmouseover="this.style.background='rgba(145,255,0, 0.15)'"
                onmouseout="this.style.background='transparent'">NORMAL MODE</button>
             <button onclick="startGame('waves')" style="
                 font-family:monospace;font-size:16px;font-weight:bold;
@@ -149,7 +149,7 @@
             padding:16px 20px;
             min-width:220px;
         ">
-            <div style="font-size:16px;font-weight:bold;color:#ff8900;letter-spacing:3px;margin-bottom:8px;text-align:center;">TOP 10</div>
+            <div style="font-size:16px;font-weight:bold;color:#fffb00;letter-spacing:3px;margin-bottom:8px;text-align:center;">TOP 10</div>
             <div id="leaderboard-list"></div>
         </div>
     </div>
@@ -307,8 +307,8 @@
     ">
         <div>YOU WIN</div>
         <div style="font-size:32px;color:#99ff00;letter-spacing:2px;">The city is yours</div>
-        <div id="victory-time" style="font-size:24px;color:#fff;letter-spacing:3px;margin-top:8px;"></div>
-        <div id="victory-record" style="font-size:22px;color:#ffee00;letter-spacing:3px;"></div>
+        <div id="victory-time" style="font-size:24px;color:#fffb00;letter-spacing:3px;margin-top:8px;"></div>
+        <div id="victory-record" style="font-size:22px;color:#fffb00;letter-spacing:3px;"></div>
 
         <!-- Formulario de nombre (solo aparece si es top 10) -->
         <div id="victory-name-form" style="
@@ -319,7 +319,7 @@
             <input id="victory-name-input" type="text" maxlength="10" style="
                 font-family:monospace; font-size:22px; font-weight:bold;
                 letter-spacing:4px; text-align:center; text-transform:uppercase;
-                background:rgba(0,0,0,0.6); color:#fff;
+                background:rgba(0,0,0,0.6); color:#91ff00;
                 border:2px solid #99ff00; border-radius:8px;
                 padding:8px 16px; width:220px; outline:none;
             " placeholder="YOUR NAME"/>
@@ -327,11 +327,11 @@
                 font-family:monospace; font-size:16px; letter-spacing:2px;
                 padding:8px 24px; background:transparent; color:#99ff00;
                 border:2px solid #99ff00; border-radius:8px; cursor:pointer;
-            " onmouseover="this.style.background='rgba(255,137,0,0.15)'"
+            " onmouseover="this.style.background='rgba(145,255,0,0.15)'"
                onmouseout="this.style.background='transparent'">CONFIRM</button>
         </div>
 
-        <button onclick="volverAlMenu()" style="margin-top:8px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#69f0ae;border:2px solid #69f0ae;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
+        <button onclick="volverAlMenu()" style="margin-top:8px;font-family:monospace;font-size:24px;letter-spacing:2px;padding:10px 28px;background:transparent;color:#99ff00;border:2px solid #99ff00;border-radius:8px;cursor:pointer;">BACK TO MENU</button>
     </div>
 
     <div id="upgrade-screen" style="
@@ -358,11 +358,12 @@
     <script>
 
         function startGame(mode) {
-            document.getElementById('menu-screen').style.display = 'none';
-            document.getElementById('start-timer').style.display = 'block';
+            document.getElementById('menu-screen').style.display    = 'none';
+            document.getElementById('start-timer').style.display    = 'block';
+            document.getElementById('match-timer').style.display    = 'none';
+            document.getElementById('wave-counter').style.display   = 'none';
             Game.instance._gameMode = mode;
             if (mode === 'waves') {
-                document.getElementById('wave-counter').style.display  = 'none';
                 Game.instance._waveMode         = true;
                 Game.instance._waveNumber       = 1;
                 Game.instance._waveTimer        = null;
@@ -375,30 +376,11 @@
 
         function volverAlMenu() { location.reload(); }
 
-        function cargarHighscore() {
-            const val = localStorage.getItem(Config.scoreKey);
-            const el  = document.getElementById('highscore-display');
-            if (!el) return;
-            if (!val) {
-                el.textContent = 'BEST: --:--';
-            } else {
-                const seg  = parseInt(val);
-                const min  = Math.floor(seg / 60);
-                const s    = seg % 60;
-                el.textContent = `BEST: ${min}:${s.toString().padStart(2, '0')}`;
-            }
-        }
-
-        window.addEventListener('load', () => {
-            setTimeout(initCirculos, 100);
-            cargarHighscore();
-        });
-
         function initCirculos() {
             const r      = Config.hudCooldownRadius;
             const size   = r * 2;
             const rInner = r * 0.83;
-            const circ   = +(2 * Math.PI * rInner);
+            const circ   = 2 * Math.PI * rInner;
 
             ['lmb', 'rmb', 'dash'].forEach(id => {
                 const svg = document.getElementById('svg-' + id);
@@ -417,18 +399,15 @@
                 }
             });
 
-            // Fuente desde config
-            const fs     = Config.hudFontSize + 'px';
+            const fs      = Config.hudFontSize + 'px';
             const fsLarge = Config.hudFontSizeLarge + 'px';
             document.querySelectorAll('.hud-bar-label').forEach(el => el.style.fontSize = fs);
             document.querySelectorAll('.cd-circle-label').forEach(el => el.style.fontSize = fsLarge);
 
-            // Ancho de barras desde config
-            const hw = Config.hudBarWidth + 'px';
             const htrack = document.querySelector('#hud-left .hud-bar-track');
-            if (htrack) htrack.style.width = hw;
+            if (htrack) htrack.style.width = Config.hudBarWidth + 'px';
 
-            document.getElementById('upgrade-title').style.fontSize = Config.upgradeScreenTitleSize + 'px';
+            document.getElementById('upgrade-title').style.fontSize    = Config.upgradeScreenTitleSize + 'px';
             document.getElementById('upgrade-subtitle').style.fontSize = (Config.upgradeScreenTitleSize * 0.5) + 'px';
             const wc = document.getElementById('wave-counter');
             if (wc) wc.style.fontSize = Config.waveCounterFontSize + 'px';
@@ -445,30 +424,14 @@
                 const raw    = localStorage.getItem(Config.scoreKey);
                 const parsed = JSON.parse(raw);
                 scores       = Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                scores = [];
-            }
+            } catch (e) { scores = []; }
 
             scores.push({ name: nombre, time: tiempo });
             scores.sort((a, b) => a.time - b.time);
             scores.splice(10);
             localStorage.setItem(Config.scoreKey, JSON.stringify(scores));
-
             form.style.display = 'none';
         }
-
-        // Confirmar con Enter
-        window.addEventListener('load', () => {
-            setTimeout(initCirculos, 100);
-            cargarHighscore();
-
-            const input = document.getElementById('victory-name-input');
-            if (input) {
-                input.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') guardarScore();
-                });
-            }
-        });
 
         function cargarHighscore() {
             let scores = [];
@@ -476,10 +439,9 @@
                 const raw    = localStorage.getItem(Config.scoreKey);
                 const parsed = JSON.parse(raw);
                 scores       = Array.isArray(parsed) ? parsed : [];
-            } catch (e) {
-                scores = [];
-            }
-            const lista  = document.getElementById('leaderboard-list');
+            } catch (e) { scores = []; }
+
+            const lista = document.getElementById('leaderboard-list');
             if (!lista) return;
 
             if (scores.length === 0) {
@@ -488,8 +450,8 @@
             }
 
             lista.innerHTML = scores.map((s, i) => {
-                const min   = Math.floor(s.time / 60);
-                const seg   = s.time % 60;
+                const min    = Math.floor(s.time / 60);
+                const seg    = s.time % 60;
                 const tiempo = `${min}:${seg.toString().padStart(2, '0')}`;
                 const color  = i === 0 ? '#ffee00' : i === 1 ? '#aaa' : i === 2 ? '#cd7f32' : 'rgba(255,255,255,0.6)';
                 const medal  = i === 0 ? '★ ' : i === 1 ? '✦ ' : i === 2 ? '✧ ' : `${i + 1}. `;
@@ -503,9 +465,9 @@
         window.addEventListener('load', () => {
             setTimeout(initCirculos, 100);
             cargarHighscore();
+            const input = document.getElementById('victory-name-input');
+            if (input) input.addEventListener('keydown', e => { if (e.key === 'Enter') guardarScore(); });
         });
-
-        window.addEventListener('load', () => setTimeout(initCirculos, 100));
     </script>
 </body>
 </html>

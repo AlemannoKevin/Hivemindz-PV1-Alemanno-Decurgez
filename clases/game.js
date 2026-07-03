@@ -61,9 +61,12 @@ class Game {
         this._matchStarted  = false;   // empieza a contar cuando el jugador se transforma
 
         // Bonificaciones permanentes activas
-        this._bonusSpeed    = false;
-        this._bonusCooldown = false;
-        this._bonusShield   = false;
+        this._bonusSpeed      = false;
+        this._bonusCooldown   = false;
+        this._bonusShield     = false;
+        this._bonusPushImmune = false;
+        this._bonusPsyop      = false;
+        this._bonusReflect    = false;
 
         setup().then(() => this.start());
     }
@@ -72,26 +75,25 @@ class Game {
     async start() {
         await SoundManager.init();
         await SoundManager.loadAll({
-            menuMusic:      'sounds/menuMusic.mp3',
-            matchMusic:     'sounds/matchMusic.mp3',
+            menuMusic:      'sounds/menuMusic.wav',
+            matchMusic:     'sounds/matchMusic.wav',
             victory:        'sounds/victory.mp3',
             defeat:         'sounds/defeat.mp3',
             playerShot:     'sounds/playerShot.wav',
-            playerDash:     'sounds/playerDash.mp3',
+            playerDash:     'sounds/playerDash.wav',
             playerChannel:  'sounds/playerChannel.wav',
             transformation: 'sounds/transformation.wav',
-            hordeControl:   'sounds/hordeControl.mp3',
-            buffedZombies:  'sounds/buffedZombies.mp3',
+            buffedZombies:  'sounds/buffedZombies.wav',
             playerHit:      'sounds/playerHit.wav',
-            zombieBite:     'sounds/zombieBite.wav',
-            explosion:      'sounds/explosion.mp3',
-            venomousPit:    'sounds/venomousPit.mp3',
+            explosion:      'sounds/explosion.wav',
+            venomousPit:    'sounds/venomousPit.wav',
             policeShot:     'sounds/policeShot.wav',
             swatShot:       'sounds/swatShot.wav',
             brawlerStrike:  'sounds/brawlerStrike.wav',
-            humanFlee:      'sounds/humanFlee.wav',
         });
-        SoundManager.playMusic('menuMusic', 3000);
+        if (SoundManager._ctx?.state === 'running') {
+            SoundManager.playMusic('menuMusic', 0);
+        }
         this.app = new PIXI.Application({
             width:           window.innerWidth,
             height:          window.innerHeight,
@@ -230,9 +232,11 @@ class Game {
             this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
             SoundManager.play('transformation');
             SoundManager.stopMusic();
-            setTimeout(() => SoundManager.playMusic('matchMusic', 3000), 1500);
+            SoundManager.playMusic('matchMusic', 3000);
             this._matchStarted = true;
-            document.getElementById('match-timer').style.display = 'block';
+            if (!this._waveMode) {
+                document.getElementById('match-timer').style.display = 'block';
+            }
             this._startTimerOn = false;
             document.getElementById('start-timer').style.display          = 'none';
             document.getElementById('population-bar-wrap').style.display  = 'flex';
@@ -351,14 +355,15 @@ class Game {
                 document.getElementById('population-bar-wrap').style.display = 'flex';
                 if (this._waveMode) {
                     document.getElementById('wave-counter').style.display = 'block';
-                    this._waveTimer = Config.waveDuration; // arranca recién ahora
+                    this._waveTimer = Config.waveDuration;
+                } else {
+                    document.getElementById('match-timer').style.display = 'block';
                 }
                 if (!this.player.isZombie) this.player.becomeZombie(this.worldContainer, this.humans, this.zombies);
                 SoundManager.play('transformation');
                 SoundManager.stopMusic();
-                setTimeout(() => SoundManager.playMusic('matchMusic', 3000), 1500);
+                SoundManager.playMusic('matchMusic', 3000);
                 this._matchStarted = true;
-                document.getElementById('match-timer').style.display = 'block';
             }
     }
 
@@ -381,7 +386,6 @@ class Game {
                 }
             } else if (Mouse.leftHeld && this._lmbOverheat > 0) {
                 lmbActive = true;
-                SoundManager.playLoop('hordeControl', '_hordeSource');
                 this._lmbOverheat -= delta;
                 if (this._lmbOverheat <= 0) {
                     this._lmbOverheat      = 0;
@@ -649,6 +653,7 @@ class Game {
 
     // ── Helpers ───────────────────────────────────────────────────────────
     _isOnScreen(entity) {
+        if (!entity) return false;
         const sx = entity.x * Config.zoom + this.camera.offsetX;
         const sy = entity.y * Config.zoom + this.camera.offsetY;
         return sx >= 0 && sx <= window.innerWidth && sy >= 0 && sy <= window.innerHeight;
@@ -665,9 +670,9 @@ class Game {
         this._paused = false;
 
         // En waves, la música arranca al confirmar la primera habilidad
-        if (this._waveMode && this._upgradeCount === 0 && !this._music) {
+        if (this._waveMode && this._upgradeCount === 0 && this.player.isZombie) {
             SoundManager.stopMusic();
-            setTimeout(() => SoundManager.playMusic('matchMusic', 1500), 500);
+            SoundManager.playMusic('matchMusic', 3000);
         }
 
         const hab = HABILIDADES.find(h => h.id === id);
@@ -709,17 +714,22 @@ class Game {
 
     _mostrarUpgrade() {
         const BONIFICACIONES = [
-            { id: 'speed',    nombre: 'Adrenaline Rush',      desc: '+50% de velocidad de movimiento permanente.' },
-            { id: 'heal',     nombre: 'Second Wind',          desc: 'Restaura la vida del jugador al máximo.' },
-            { id: 'cooldown', nombre: 'Genetic Enhancement',  desc: 'Reduce el cooldown de todas las habilidades un 25% permanentemente.' },
-            { id: 'elite',    nombre: 'Elite Vanguard',       desc: 'Spawna 5 zombies élite alrededor del jugador.' },
-            { id: 'shield',   nombre: 'Rotting Armor',        desc: 'Reduce el daño recibido un 50% permanentemente.' },
+            { id: 'speed',      nombre: 'Adrenaline Rush',      desc: '+50% de velocidad de movimiento permanente.' },
+            { id: 'reflect',    nombre: 'Carrion Bullets',      desc: 'Las balas al atravesarte se convierten en proyectiles zombies. Recibes 25% menos daño.' },
+            { id: 'heal',       nombre: 'Second Wind',          desc: 'Restaura la vida del jugador al máximo.' },
+            { id: 'cooldown',   nombre: 'Genetic Enhancement',  desc: 'Reduce el cooldown de todas las habilidades un 25% permanentemente.' },
+            { id: 'pushimmune', nombre: 'Immovable Object',     desc: 'Inmunidad total al empuje de balas y ataques melee.' },
+            { id: 'psyop',      nombre: 'Cognitive Psyop',      desc: 'Los humanos te reconocen como uno de los suyos. No huyen de ti ni te atacan.' },
+            { id: 'shield',     nombre: 'Rotting Armor',        desc: 'Reduce el daño recibido un 50% permanentemente.' },
         ];
-        const bonDisp = BONIFICACIONES.filter(b => {
+        const bonDisp = BONIFICACIONES.filter(b => { 
+            if (b.id === 'reflect' && this._bonusReflect) return false;
             if (b.id === 'heal'     && this.player.health >= Config.playerMaxHealth) return false;
             if (b.id === 'speed'    && this._bonusSpeed)    return false;
             if (b.id === 'cooldown' && this._bonusCooldown) return false;
-            if (b.id === 'shield'   && this._bonusShield)   return false;
+            if (b.id === 'shield'      && this._bonusShield)      return false;
+            if (b.id === 'pushimmune'  && this._bonusPushImmune)  return false;
+            if (b.id === 'psyop'       && this._bonusPsyop)       return false;
             return true;
         });
         const bonElegido = bonDisp[Math.floor(Math.random() * bonDisp.length)] || null;
@@ -780,43 +790,43 @@ class Game {
                 background:rgba(${alpha});
                 cursor:pointer;
                 text-align:center;
+                align-self:stretch;
             `;
             div.onmouseover = () => div.style.background = `rgba(${alpha.split(',').slice(0,3).join(',')},0.25)`;
             div.onmouseout  = () => div.style.background = `rgba(${alpha})`;
             div.onclick     = () => this.pickUpgrade(hab.id);
             div.innerHTML   = `
-                <div style="font-size:${Config.upgradeCardFontType}px;color:${color};letter-spacing:2px;margin-bottom:10px;">${hab.tipo.toUpperCase()}</div>
+                <div style="font-size:${Config.upgradeCardFontType}px;color:${color};letter-spacing:2px;margin-bottom:10px;">${hab.tipo === 'lmb' ? 'LEFT CLICK' : 'RIGHT CLICK'}</div>
                 <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:#ffffff;letter-spacing:1px;margin-bottom:12px;">${hab.nombre}</div>
                 <div style="font-size:${Config.upgradeCardFontDesc}px;color:#fff;line-height:1.6;">${hab.desc}</div>`;
             return div;
         };
 
         if (lmb) cards.appendChild(crearCard(lmb, '#ffffff', '200,200,200,0.07'));
-        if (rmb) cards.appendChild(crearCard(rmb, '#91ff00', '145,255,0,0.07'));
-
-        // Botón de bonificación centrado y más pequeño
         if (bonElegido) {
             const bonDiv = document.createElement('div');
             bonDiv.style.cssText = `
-                width:${Math.floor(Config.upgradeCardWidth * 1)}px;
+                width:${Math.floor(Config.upgradeCardWidth * 0.75)}px;
                 padding:16px 18px;
-                border:2px solid #aaaaff;
+                border:2px solid #fffb00;
                 border-radius:12px;
-                background:rgba(100,100,255,0.07);
+                background:rgba(255,251,0,0.07);
                 cursor:pointer;
                 text-align:center;
                 align-self:center;
             `;
-            bonDiv.onmouseover = () => bonDiv.style.background = 'rgba(100,100,255,0.2)';
-            bonDiv.onmouseout  = () => bonDiv.style.background = 'rgba(100,100,255,0.07)';
+            bonDiv.onmouseover = () => bonDiv.style.background = 'rgba(255,251,0,0.2)';
+            bonDiv.onmouseout  = () => bonDiv.style.background = 'rgba(255,251,0,0.07)';
             bonDiv.onclick     = () => this._aplicarBonificacion(bonElegido.id);
             bonDiv.innerHTML   = `
-                <div style="font-size:${Config.upgradeCardFontType}px;color:#aaaaff;letter-spacing:2px;margin-bottom:8px;">BONUS</div>
-                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:#aaaaff;letter-spacing:1px;margin-bottom:10px;">${bonElegido.nombre}</div>
+                <div style="font-size:${Config.upgradeCardFontType}px;color:#fffb00;letter-spacing:2px;margin-bottom:8px;">BONUS</div>
+                <div style="font-size:${Config.upgradeCardFontTitle}px;font-weight:bold;color:#ffffff;letter-spacing:1px;margin-bottom:10px;">${bonElegido.nombre}</div>
                 <div style="font-size:${Config.upgradeCardFontDesc}px;color:#bbb;line-height:1.5;">${bonElegido.desc}</div>
             `;
             cards.appendChild(bonDiv);
         }
+        if (rmb) cards.appendChild(crearCard(rmb, '#91ff00', '145,255,0,0.07'));
+
 
         this._paused = true;
         const screen = document.getElementById('upgrade-screen');
@@ -828,6 +838,9 @@ class Game {
         this._paused = false;
 
         switch (id) {
+            case 'reflect':
+                this._bonusReflect = true;
+                break;
             case 'speed':
                 this._bonusSpeed = true;
                 break;
@@ -838,24 +851,18 @@ class Game {
             case 'cooldown':
                 this._bonusCooldown = true;
                 break;
-            case 'elite': {
-                for (let i = 0; i < Config.bonusEliteCount; i++) {
-                    const angle  = (i / Config.bonusEliteCount) * Math.PI * 2;
-                    const spawnX = this.player.x + Math.cos(angle) * 80;
-                    const spawnY = this.player.y + Math.sin(angle) * 80;
-                    const z      = new Zombie(spawnX, spawnY, this.worldContainer);
-                    z._ctBoostTimer      = 9999999; // no expiran
-                    z._ctReducedAttackCD = true;
-                    if (z.sprite) z.sprite.tint = 0xff4444;
-                    this.zombies.push(z);
-                }
+            case 'pushimmune':
+                this._bonusPushImmune = true;
                 break;
-            }
+            case 'psyop':
+                this._bonusPsyop = true;
+                break;
             case 'shield':
                 this._bonusShield = true;
                 break;
+            }
+            
         }
-    }
 
     _mostrarVictoria() {
         this.app.ticker.stop();

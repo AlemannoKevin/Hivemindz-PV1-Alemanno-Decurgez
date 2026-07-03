@@ -98,8 +98,9 @@ class Player {
         if (!this.isZombie || this._comeTogether || this._hivemindActive) return;
         const mitigNecrotic = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
             ? Config.necroticDmgMitig : 1;
-        const mitigShield = Game.instance?._bonusShield ? Config.bonusDamageShield : 1;
-        this.health -= mitigNecrotic * mitigShield;
+        const mitigShield   = Game.instance?._bonusShield  ? Config.bonusDamageShield  : 1;
+        const mitigReflect  = Game.instance?._bonusReflect ? Config.bonusReflectDamage : 1;
+        this.health -= mitigNecrotic * mitigShield * mitigReflect;
         SoundManager.play('playerHit');
         if (this.sprite) {
             this.sprite.tint = 0xff0000;
@@ -122,7 +123,7 @@ class Player {
                     vignette.style.display = 'block';
                     // Cuanto menos vida, más intenso el amarillo
                     const intensity = (0.3 - pct) / 0.3;
-                    vignette.style.boxShadow = `inset 0 0 120px 60px rgba(255,200,0,${intensity * 0.6})`;
+                    vignette.style.boxShadow = `inset 0 0 150px 90px rgba(255,251,0,${intensity * 0.7})`;
                 } else {
                     vignette.style.display = 'none';
                 }
@@ -214,12 +215,17 @@ class Player {
         }
 
         if (this._pushVx || this._pushVy) {
-            const pushMult = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
-                ? Config.necroticPushResist : 1;
-            this.x   += this._pushVx * deltaTime * pushMult;
-            this.y   += this._pushVy * deltaTime * pushMult;
-            this._pushVx *= 0.85;
-            this._pushVy *= 0.85;
+            if (Game.instance?._bonusPushImmune) {
+                this._pushVx = 0;
+                this._pushVy = 0;
+            } else {
+                const pushMult = (Game.instance?._rmbUpgrade === 'necrotic' && this._necroticOn)
+                    ? Config.necroticPushResist : 1;
+                this.x   += this._pushVx * deltaTime * pushMult;
+                this.y   += this._pushVy * deltaTime * pushMult;
+                this._pushVx *= 0.85;
+                this._pushVy *= 0.85;
+            }
         }
 
         World.clampToBounds(this);

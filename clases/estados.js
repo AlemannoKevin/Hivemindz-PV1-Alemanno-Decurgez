@@ -1,7 +1,13 @@
 // ── Helpers compartidos ───────────────────────────────────────────────────────
 
 function _moverConBoids(entity, allHumans, goalX, goalY, speed, deltaTime, context, boidsCfg = {}) {
-    const boidsForce = Boids.computeSteering(entity, allHumans, {
+    // Psyop: incluimos al jugador como si fuera un humano más para los boids
+    const player = Game.instance?.player;
+    const humansParaBoids = (Game.instance?._bonusPsyop && player?.isZombie)
+        ? [...allHumans, player]
+        : allHumans;
+
+    const boidsForce = Boids.computeSteering(entity, humansParaBoids, {
         separationWeight: boidsCfg.sep ?? 0,
         alignmentWeight:  boidsCfg.ali ?? 0.5,
         cohesionWeight:   boidsCfg.coh ?? 0.3,
@@ -66,11 +72,12 @@ function _getSpeedMults(entity) {
     update(humano, context) {
         const { allHumans, player, allZombies, deltaTime } = context;
 
-        const threat = (player.isZombie &&
-            Utils.distance(humano.x, humano.y, player.x, player.y) < Config.humanFleeRange)
-            || allZombies.some(z =>
-                Utils.distance(humano.x, humano.y, z.x, z.y) < Config.humanFleeRange);
-        if (threat) { humano.setState(new HumanoFleeState()); return; }
+        const psyop     = Game.instance?._bonusPsyop;
+        const playerThreat = player.isZombie && !psyop &&
+            Utils.distance(humano.x, humano.y, player.x, player.y) < Config.humanFleeRange;
+        const zombieThreat = allZombies.some(z =>
+            Utils.distance(humano.x, humano.y, z.x, z.y) < Config.humanFleeRange);
+        if (playerThreat || zombieThreat) { humano.setState(new HumanoFleeState()); return; }
 
         _actualizarWander(humano, deltaTime);
         _moverConBoids(humano, allHumans,
@@ -89,7 +96,6 @@ class HumanoFleeState {
         humano._fleeTimer    = Config.humanFleeFrames;
         humano._fleeCooldown = Config.humanFleeCooldown || 120;
         humano.exclamation.visible = true;
-        SoundManager.playCooled('humanFlee', 300);
     }
 
     update(humano, context) {
@@ -105,7 +111,6 @@ class HumanoFleeState {
             const d = Utils.distance(humano.x, humano.y, z.x, z.y);
             if (d < closestDist) { closestDist = d; threatX = z.x; threatY = z.y; }
         }
-
         const awayAngle = Utils.angleTo(threatX, threatY, humano.x, humano.y);
         _moverConBoids(humano, allHumans, Math.cos(awayAngle), Math.sin(awayAngle),
             Config.humanFleeSpeed, deltaTime, context,
@@ -310,7 +315,7 @@ class PeleadorAttackState {
 
     _swingBat(peleador) {
         const allZombies = peleador._lastZombies || [];
-        SoundManager.play('brawlerStrike');
+        SoundManager.playCooledIfOnScreen('brawlerStrike',peleador, 300);
         for (const zombie of allZombies) {
             const dist = Utils.distance(peleador.x, peleador.y, zombie.x, zombie.y);
             if (dist < Config.brawlerBatRange && dist > 0) {
@@ -327,7 +332,7 @@ class PeleadorAttackState {
         }
 
         const player = Game.instance?.player;
-        if (player?.isZombie) {
+        if (player?.isZombie && !Game.instance?._bonusPsyop) {
             const dist = Utils.distance(peleador.x, peleador.y, player.x, player.y);
             if (dist < Config.brawlerBatRange && dist > 0) {
                 const angle     = Utils.angleTo(peleador.x, peleador.y, player.x, player.y);

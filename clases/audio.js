@@ -3,25 +3,23 @@ const SoundManager = {
     _buffers: {},
     _volumes: {
         // Música
-        menuMusic:        0.4,
-        matchMusic:       0.35,
+        menuMusic:        0.5,
+        matchMusic:       0.5,
         // Eventos del jugador
-        playerShot:       0.5,
+        playerShot:       0.8,
         playerDash:       0.4,
-        playerChannel:    0.5,
-        transformation:   0.7,
+        playerChannel:    0.3,
+        playerHit:        0.1,
+        transformation:   0.5,
         // Horda
-        hordeControl:     0.3,
-        buffedZombies:    0.3,
-        zombieBite:       0.5,
+        buffedZombies:    1.2,
         // Habilidades
         explosion:        0.6,
-        venomousPit:      0.4,
+        venomousPit:      0.2,
         // Enemigos
         policeShot:       0.05,
         swatShot:         0.05,
-        brawlerStrike:    0.3,
-        humanFlee:        0.3,
+        brawlerStrike:    0.05,
         // Victoria/derrota
         victory:          0.6,
         defeat:           0.6,
@@ -32,8 +30,20 @@ const SoundManager = {
 
     async init() {
         this._ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // Los navegadores bloquean el audio hasta interacción del usuario
-        // Se inicializa en el primer click
+
+        // Los navegadores suspenden el AudioContext hasta interacción del usuario
+        const reanudar = () => {
+            if (this._ctx.state === 'suspended') {
+                this._ctx.resume().then(() => {
+                    // Una vez reanudado, arrancamos la música del menú
+                    this.playMusic('menuMusic', 0);
+                });
+            }
+            document.removeEventListener('click',   reanudar);
+            document.removeEventListener('keydown', reanudar);
+        };
+        document.addEventListener('click',   reanudar);
+        document.addEventListener('keydown', reanudar);
     },
 
     async load(alias, src) {
@@ -88,7 +98,10 @@ const SoundManager = {
     stopMusic() {
         clearTimeout(this._musicTimeout);
         this._musicTimeout = null;
-        try { this._music?.source.stop(); } catch(e) {}
+        if (this._music && this._music.source) {
+            this._music.source.onended = null; // <-- This stops it from ghost-looping
+            try { this._music.source.stop(); } catch(e) {}
+        }
         this._music = null;
     },
 
@@ -112,5 +125,15 @@ const SoundManager = {
         if (now - last < cooldownMs) return;
         this._cooldowns[alias] = now;
         this.play(alias);
+    },
+    
+    playIfOnScreen(alias, entity, options = {}) {
+        if (!Game.instance?._isOnScreen(entity)) return;
+        this.play(alias, options);
+    },
+
+    playCooledIfOnScreen(alias, entity, cooldownMs = 80) {
+        if (!Game.instance?._isOnScreen(entity)) return;
+        this.playCooled(alias, cooldownMs);
     },
 };

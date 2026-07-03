@@ -35,7 +35,6 @@ class Bala extends BalaBase {
         this.graphic.lineStyle(1.5, 0x91ff00, 0.6);
         this.graphic.drawCircle(0, 0, 9);
         worldContainer.addChild(this.graphic);
-        SoundManager.playCooled('policeShot', 80);
     }
 
     update(allHumans, worldContainer, zombies) {
@@ -88,6 +87,7 @@ class BalaPolicia extends BalaBase {
         this.graphic.lineStyle(1.5, 0x00beff, 0.6);
         this.graphic.drawCircle(0, 0, 6);
         worldContainer.addChild(this.graphic);
+        SoundManager.playCooledIfOnScreen('policeShot',this, 300);
     }
 
     update(allZombies, player) {
@@ -105,6 +105,19 @@ class BalaPolicia extends BalaBase {
         if (player?.isZombie && Utils.distance(this.x, this.y, player.x, player.y) < 20) {
             player.takeDamage();
             this.dead = true;
+
+            if (Game.instance?._bonusReflect) {
+                // La dirección reflejada es la misma que traía la bala (sigue su trayectoria)
+                const speed = Math.hypot(this.vx, this.vy);
+                const dirX  = this.vx / speed;
+                const dirY  = this.vy / speed;
+                const angle = Math.atan2(dirY, dirX);
+                const balaReflejada = new Bala(
+                    this.x, this.y, angle,
+                    Game.instance.worldContainer
+                );
+                Game.instance.bullets.push(balaReflejada);
+            }
         }
     }
 
@@ -202,6 +215,7 @@ class BalaPit extends BalaBase {
         this.graphic.lineStyle(1.5, 0x91ff00, 0.7);
         this.graphic.drawCircle(0, 0, 9);
         worldContainer.addChild(this.graphic);
+        SoundManager.play('playerShot');
     }
 
     update(allHumans, worldContainer, zombies) {

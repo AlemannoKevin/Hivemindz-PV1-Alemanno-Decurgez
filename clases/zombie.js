@@ -201,7 +201,8 @@ class Zombie extends GameObject {
             this.sprite.onComplete = null;
 
             if (Utils.distance(this.x, this.y, captured.x, captured.y) >= Config.zombieAttackRange + 20) return;
-            SoundManager.play('zombieBite');
+            //SoundManager.playCooledIfOnScreen('playerHit',this, 300);
+            SoundManager.playCooledIfOnScreen('transformation',this, 300);
 
             if (captured.startInfection) {
                 if (captured instanceof Peleador) {

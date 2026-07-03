@@ -171,7 +171,8 @@ class Peleador extends Humano {
         let debeAtacar = allZombies.some(z =>
             Utils.distance(this.x, this.y, z.x, z.y) < Config.brawlerBatRange
         );
-        if (!debeAtacar && player.isZombie &&
+        const psyop = Game.instance?._bonusPsyop;
+        if (!debeAtacar && player.isZombie && !psyop &&
             Utils.distance(this.x, this.y, player.x, player.y) < Config.brawlerBatRange) {
             debeAtacar = true;
         }

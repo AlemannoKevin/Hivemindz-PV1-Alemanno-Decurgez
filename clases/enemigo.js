@@ -122,7 +122,7 @@ class Swat extends Policia {
     // Swat dispara en spread de 3 balas
     _shoot(targetX, targetY, balas, worldContainer) {
         const baseAngle = Utils.angleTo(this.x, this.y, targetX, targetY);
-        SoundManager.playCooled('swatShot', 80);
+        SoundManager.playCooledIfOnScreen('swatShot',this, 300);
         for (const offset of [-Config.swatSpreadAngle, 0, Config.swatSpreadAngle]) {
             balas.push(new BalaPolicia(
                 this.x, this.y, baseAngle + offset, worldContainer,

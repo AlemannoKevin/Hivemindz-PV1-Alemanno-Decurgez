@@ -10,7 +10,7 @@ const Config = {
     zoomMax:     2,
     zoomSpeed:   0.1,
     borderRepelMargin: 200,   // grosor del borde invisible en px
-    borderRepelForce:  7,   // fuerza de repulsión del borde
+    borderRepelForce:  8,   // fuerza de repulsión del borde
 
     // ── Obstáculos ────────────────────────────────────────────────────────
     obstacleHitboxSize:  80,
@@ -51,7 +51,7 @@ const Config = {
     playerDashSpeed:      16,
     playerDashDuration:   20,
     playerDashCooldown:   150,
-    playerBulletSpeed:    4.5,
+    playerBulletSpeed:    5,
     playerBulletCooldown: 100,
 
     // ── Zombies ───────────────────────────────────────────────────────────
@@ -98,7 +98,7 @@ const Config = {
     bioCentralSpeedBoost: 1.8,
 
     // ── Habilidad: Putrified Daggers ──────────────────────────────────────
-    daggerCooldown:      60,
+    daggerCooldown:      55,
     daggerHitsToInfect:  2,
     daggerPoliceDamage:  0.375,
     daggerSpreadAngle:   0.135,
@@ -164,7 +164,7 @@ const Config = {
     bonusSpeedMult:        1.5,    // +50% velocidad
     bonusCooldownMult:     0.75,   // 25% reducción de cooldown
     bonusDamageShield:     0.5,    // 50% reducción de daño
-    bonusEliteCount:       5,      // zombies elite que spawnea el bonus
+    bonusReflectDamage: 0.75,   // daño recibido con reflective skin (25% menos)
 
     // ── Spawns post-upgrade ───────────────────────────────────────────────
     upgradeZombieSpawn:       15,    // zombies que spawnan tras elegir habilidad
