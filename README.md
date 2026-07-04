@@ -19,6 +19,9 @@ El loop del juego consiste en infectar a todos los humanos del mapa y eliminar a
 
 -Espacio: Dash.
 
+-Mouse-wheel: Zoom de cámara
+
+
 ## Link de Github Pages:
 
 https://alemannokevin.github.io/Hivemindz-PV1-Alemanno-Decurgez/
